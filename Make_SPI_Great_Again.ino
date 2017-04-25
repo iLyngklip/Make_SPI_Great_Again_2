@@ -115,14 +115,14 @@ void loop() {
   // Serial.println("");
   
   // delay(100);
-  if(adressenViHusker == BASIC_ADRESS + (0x10000 - (2*sizeof(arrayToSaveToFlash)))){
+  if(adressenViHusker == BASIC_ADRESS + (0x10000 - (sizeof(arrayToSaveToFlash)))){
       adressenViHusker = (BASIC_ADRESS + 0x10000);
       blockErase(adressenViHusker);
       blockErase(adressenViHusker);
       blockErase(adressenViHusker);
       
     } else {
-      adressenViHusker += (sizeof(arrayToSaveToFlash)*2);
+      adressenViHusker += (sizeof(arrayToSaveToFlash));
     }
     Serial.print("adressenViHusker:\t"); Serial.println(adressenViHusker, HEX);
 }
