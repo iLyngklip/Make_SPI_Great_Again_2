@@ -1,35 +1,143 @@
-// #include "AudioSamples.h"
 
+/*
+   .-------------.       .    .   *       *   
+  /_/_/_/_/_/_/_/ \         *       .   )    .
+ //_/_/_/_/_/_// _ \ __          .        .   
+/_/_/_/_/_/_/_/|/ \.' .`-o                    
+ |             ||-'(/ ,--'                    
+ |             ||  _ |                        
+ |             ||'' ||                        
+ |_____________|| |_|L                    
+ */
+
+ 
 /*  Dette program sender indholdet af "arrayToSaveToFlash[]" over SPI
  *   til MX25L6445E flashen som sidder på Papilioen. 
  *   
  * 
  */
-   
-
-
-
+/*
+#################################################################################################
+ _____    _____   _   _      ____    _    _   _______ 
+ |  __ \  |_   _| | \ | |    / __ \  | |  | | |__   __|
+ | |__) |   | |   |  \| |   | |  | | | |  | |    | |   
+ |  ___/    | |   | . ` |   | |  | | | |  | |    | |   
+ | |       _| |_  | |\  |   | |__| | | |__| |    | |   
+ |_|      |_____| |_| \_|    \____/   \____/     |_|   
+#################################################################################################
+*/   
 /*  PINOUT
  * ------------------------------------------
  * |     Arduino  T Port      T  Papilio    |
- * |  Clock:   13 | B00100000 |  13         |jeg er sej
+ * |  Clock:   13 | B00100000 |  13         |
  * |  MISO:    12 | B00010000 |  12         |
  * |  MOSI:    11 | B00001000 |  11         |
  * |  SS:      10 | B00000100 |  09         |
  * ------------------------------------------
  */
-// Block-skifte ligger ved 0x010000, 0x020000 osv.
-#define BASIC_ADRESS      0x020000
-#define BASIC_ADRESS_OLD  0x7E8000
-uint32_t adressenViHusker = BASIC_ADRESS;
-const uint32_t startAdressen = BASIC_ADRESS;
 
-char antalBytes = 2;
+ 
+/*
+#################################################################################################
+  _____    ______   ______   _____   _   _   ______    _____ 
+ |  __ \  |  ____| |  ____| |_   _| | \ | | |  ____|  / ____|
+ | |  | | | |__    | |__      | |   |  \| | | |__    | (___  
+ | |  | | |  __|   |  __|     | |   | . ` | |  __|    \___ \ 
+ | |__| | | |____  | |       _| |_  | |\  | | |____   ____) |
+ |_____/  |______| |_|      |_____| |_| \_| |______| |_____/ 
+#################################################################################################
+*/
+#include <avr/pgmspace.h>
+  // Block-skifte ligger ved 0x010000, 0x020000 osv.
+  // Adressen hvorfra der startes med at skrive 
+#define START_ADRESS      0x020000
+  // Adressen hvortil der skrives. 0x0 for at deaktivere
+#define STOP_ADRESS       0x040000
+
+#define USE_BIG_ARRAY     2
+        /*
+         * Vælger hvilket data-array der skal bruges
+         *  3:  512 byte  <- Der er tilsyneladende en fejl med denne størrelse
+         *  2:  256 byte
+         *  1:  128 byte
+         *  0:    2 byte
+         */
+        
+
+/*
+#################################################################################################
+ __      __             _____    _____              ____    _        ______    _____ 
+ \ \    / /     /\     |  __ \  |_   _|     /\     |  _ \  | |      |  ____|  / ____|
+  \ \  / /     /  \    | |__) |   | |      /  \    | |_) | | |      | |__    | (___  
+   \ \/ /     / /\ \   |  _  /    | |     / /\ \   |  _ <  | |      |  __|    \___ \ 
+    \  /     / ____ \  | | \ \   _| |_   / ____ \  | |_) | | |____  | |____   ____) |
+     \/     /_/    \_\ |_|  \_\ |_____| /_/    \_\ |____/  |______| |______| |_____/
+#################################################################################################
+*/
+
+  
+uint32_t adressenViHusker = START_ADRESS;
+const uint32_t startAdressen = START_ADRESS;
 
 
 // Da flashen er fyldt med 1'ere, skriver vi bevidst 0'ere
 // til den, så vi tjekker om vi rammer rigtigt.
   //byte arrayToSaveToFlash[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};
+#if USE_BIG_ARRAY == 3
+  const byte arrayToSaveToFlash[] = {
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA
+  };
+#elif USE_BIG_ARRAY == 2
+  const byte arrayToSaveToFlash[] = {
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
+    0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA
+  };
+#elif USE_BIG_ARRAY == 1
   const byte arrayToSaveToFlash[] = {
     0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
     0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
@@ -40,8 +148,9 @@ char antalBytes = 2;
     0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA,
     0xAA, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xFA
   };
-  // int16_t arrayToSaveToFlash[] = {0x0000, 0x0000, 0x0000, 0x0000};
-
+#elif USE_BIG_ARRAY == 0
+  const byte arrayToSaveToFlash[] = { 0xFF, 0xFF};
+#endif
 
 
 
@@ -49,117 +158,216 @@ byte storeReadData[sizeof(arrayToSaveToFlash)] = {0x00, 0x00}; // Her gemmer vi 
 byte storeRDSR = 0x00;                // RDSR gemmes her. Omskriv til lokal variabel
 byte RDSCUR = 0x00;                   // RDSCUR gemmes her. Omskriv til lokal variabel
 
-boolean WEL = true;   // Write Enable Latch - bit
-boolean WIP = false;  // Write In Progress - bit
-boolean BP0 = true;//   |
-boolean BP1 = true;//   |-> Protection
-boolean BP2 = true;//   |
+boolean WIP   = true; // Write In Progress - bit
+boolean WEL   = true; // Write Enable Latch - bit
+boolean BP0   = true; //   |
+boolean BP1   = true; //   |-> Protection
+boolean BP2   = true; //   |
+boolean BP3   = true; //   |
+boolean QE    = false;// Quad Enable
+boolean SRWD  = true; // Status Register Write Protect 
 
+boolean P_FAIL  = true;
+boolean E_FAIL  = true;
+boolean WPSEL   = true;
+
+
+/*
+#################################################################################################
+ __      __   ____    _____   _____       _____   ______   _______   _    _   _____  
+ \ \    / /  / __ \  |_   _| |  __ \     / ____| |  ____| |__   __| | |  | | |  __ \ 
+  \ \  / /  | |  | |   | |   | |  | |   | (___   | |__       | |    | |  | | | |__) |
+   \ \/ /   | |  | |   | |   | |  | |    \___ \  |  __|      | |    | |  | | |  ___/ 
+    \  /    | |__| |  _| |_  | |__| |    ____) | | |____     | |    | |__| | | |     
+     \/      \____/  |_____| |_____/    |_____/  |______|    |_|     \____/  |_|     
+#################################################################################################
+*/
 void setup() {
   DDRB = DDRB|B00101111; // Set input/output pinmodes
 
   Serial.begin(250000);
   blockErase(adressenViHusker);
-  blockErase(adressenViHusker);
-  blockErase(adressenViHusker);
-  delay(2000);
   Serial.print("sizeof(arrayToSaveToFlash):\t"); Serial.println(sizeof(arrayToSaveToFlash));
+  
+  delay(2000);
 }
 
+/*
+#################################################################################################
+ __      __   ____    _____   _____          _         ____     ____    _____  
+ \ \    / /  / __ \  |_   _| |  __ \        | |       / __ \   / __ \  |  __ \ 
+  \ \  / /  | |  | |   | |   | |  | |       | |      | |  | | | |  | | | |__) |
+   \ \/ /   | |  | |   | |   | |  | |       | |      | |  | | | |  | | |  ___/ 
+    \  /    | |__| |  _| |_  | |__| |       | |____  | |__| | | |__| | | |     
+     \/      \____/  |_____| |_____/        |______|  \____/   \____/  |_|      
+#################################################################################################
+*/
 void loop() {
   // Resetter globale variabler
-  // storeReadData[0]  = 0x00;
-  // storeReadData[1]  = 0x00;
-  Serial.print("adressenViHusker:\t"); Serial.println(adressenViHusker, HEX);
-  /*
-      blockErase(adressenViHusker);
-      blockErase(adressenViHusker);
-      blockErase(adressenViHusker);
-  delay(100);
-  */
   for(int i = 0; i < sizeof(arrayToSaveToFlash); i++){
     storeReadData[i] = 0x00;
   }
   storeRDSR         = 0x00;
   RDSCUR            = 0x00;
+
+
   
-  //while(1){
-  // readStatusRegister(); 
-  // readRDSCUR();
-  //}
-    
+  Serial.print("adressenViHusker:\t"); Serial.println(adressenViHusker, HEX);
   
-  // blockErase(adressenViHusker);
-  // delay(100);
-  // Serial.print("adressenViHusker:\t"); Serial.println(adressenViHusker, HEX);
+  
+  
+  blockErase(adressenViHusker);  
   pageProgram();  // Page program først!
-  // pageProgram();  // Page program først!
-      // writeStuff();   // Først skriver vi ting
-  // delay(2000);
-  checkBP();
+  
+  while(isBlocksLocked()){
+    // Der er låst for nogle blokke. Lås dem op!
+  }
   
   readTwoBytes(); // Herefter læser vi ting
-  //delay(2000);
-/*     
-  for(int i = 0; i < sizeof(arrayToSaveToFlash); i+=4){
-    Serial.print("SRD["); Serial.print(i); Serial.print("]:\t"); Serial.print(storeReadData[i], HEX); Serial.print("\t");
-    Serial.print("SRD["); Serial.print(i+1); Serial.print("]:\t"); Serial.print(storeReadData[i+1], HEX); Serial.print("\t");
-    Serial.print("SRD["); Serial.print(i+2); Serial.print("]:\t"); Serial.print(storeReadData[i+2], HEX); Serial.print("\t");
-    Serial.print("SRD["); Serial.print(i+3); Serial.print("]:\t"); Serial.println(storeReadData[i+3], HEX);
   
+
+  compareData(); // Her sammenlignes det læste med det skrevne. Er der forskel bliver Serial-porten spammet! (Bool)
+
+  
+
+  if(adressenViHusker >= STOP_ADRESS && STOP_ADRESS != 0x00000){
+      while(1); // Skal der kun skrives til et område? 
+  } else {
+    adressenViHusker += (sizeof(arrayToSaveToFlash));
   }
+  
+}
+
+
+/*
+#################################################################################################
+  _______    ____    _____          ______   _    _   _   _    _____     
+ |__   __|  / __ \  |  __ \        |  ____| | |  | | | \ | |  / ____|    
+    | |    | |  | | | |__) |       | |__    | |  | | |  \| | | |         
+    | |    | |  | | |  ___/        |  __|   | |  | | | . ` | | |         
+    | |    | |__| | | |            | |      | |__| | | |\  | | |____   _ 
+    |_|     \____/  |_|            |_|       \____/  |_| \_|  \_____| (_)
+#################################################################################################
 */
-  for(int i = 0; i < sizeof(arrayToSaveToFlash); i++){  
-    if(storeReadData[i] != arrayToSaveToFlash[i]){
-      Serial.print("storeReadData["); Serial.print(i); Serial.print("] IKKE ENS\n");
-    }
-  }
-  /*
-  Serial.print("storeReadData[0]:\t"); Serial.println(storeReadData[0], HEX); // og printer
-  Serial.print("storeReadData[1]:\t"); Serial.println(storeReadData[1], HEX); // hvad vi har læst
-  */
-  // Serial.print("storeRDSR:\t\t"); Serial.println(storeRDSR, BIN); // print RDSR
-  // Serial.println("");
+void readTwoBytes(){
+  /*  Læser lige så mange bytes som der er blevet skrevet fra
+   *   arrayToSaveToFlash[] og gemmer dem i storeReadData[]
+   *   Disse kan senere sammenlignes med compareData().
+   *   
+   *   The sequence of issuing READ instruction is: 
+   *   1 → CS# goes low
+   *   2 → sending READ instruction code
+   *   3 → 3-byte address on SI 
+   *   4 → data out on MISO
+   *   5 → to end READ operation can use CS# to high at any time during data out. 
+   *   
+   *   Kilde: Datablad pp. 19
+   */
+  // Step 1
+  lowSS();
+
+  // Step 2
+  sendReadInstruction();
   
-  // delay(100);
-  if(adressenViHusker == BASIC_ADRESS + (0x10000 - (sizeof(arrayToSaveToFlash)))){
-      adressenViHusker = (BASIC_ADRESS + 0x10000);
-      blockErase(adressenViHusker);
-      blockErase(adressenViHusker);
-      blockErase(adressenViHusker);
-      
+  // Step 3
+  sendAdress((adressenViHusker)); 
+
+  // Step 4 
+  for(int i = 0; i < sizeof(arrayToSaveToFlash); i++){
+    storeReadData[i] = readOneByteSPI();
+  }
+  
+  // Step 5
+  highSS();  
+  
+  // Vi er done
+}
+
+boolean pageProgram(){
+  /* 
+   * Skriver data til adressen adressenViGemmer. 
+   *  Området der skrives til SKAL være slettet før
+   *  ændringer kan bruges til noget, da Page Program 
+   *  ikke kan skrive '1'ere, men kun '0'ere.
+   *  
+   *  
+   *  The sequence of issuing PP instruction is: 
+   *  → Write Enable
+   *  
+   *  → CS# goes low
+   *  → sending PP instruction code
+   *  → 3-byte address on SI
+   *    → at least 1-byte on data on SI
+   *  → CS# goes high.  
+   */
+
+    //    De adresse-variabler vi har
+    // uint32_t adressenViHusker = START_ADRESS;
+
+    // Giver write-enable og tjekker den er klar
+    do{                     
+      writeEnable();        // Write Enable 
+      lowSS();
+      readStatusRegister(); // Write Enable 
+      highSS();
+      delayMicroseconds(5);
+    }while(!WEL && WIP);    // Tjekker den er klar
+
+    // Cycler clocken så chippen er klar over der nu kommer en kommando
+    cycleSS();
+
+    transmitOneByteSPI(0x02);     // Sender kommandoen om Page Program
+    sendAdress(adressenViHusker); // Sender adressen
+
+    // Sender data afsted
+    for(int i = 0; i < sizeof(arrayToSaveToFlash); i++){
+      transmitOneByteSPI(arrayToSaveToFlash[i]);
+      // Serial.print("Skriver:\t"); Serial.println(arrayToSaveToFlash[i], HEX);
+    }
+
+    
+    highSS();// Høj SS herefter
+
+    
+    // Nu gemmer chippen sager!
+    // delay(5);// Ifølge databladet (tPP) er chippen max 5 ms om at gemme
+
+    
+    // Vent på Write-In-Progress bitten bliver 0 igen
+    waitUntilWorkIsDone();
+
+    
+    do{                     // Step 4
+      writeDisable();
+      readStatusRegister(); // Step 4
+      readRDSCUR();           // Step 5
+      // Serial.println("Venter slut");
+      delayMicroseconds(1);
+    }while(WIP && WEL);            // Step 4
+
+
+    writeDisable();
+    highSS(); // Vi er done nu
+
+    
+    if(P_FAIL || E_FAIL){
+      // Det lykkedes ikke at skrive
+      throwErrorMessage();
+      return false;
     } else {
-      adressenViHusker += (sizeof(arrayToSaveToFlash));
-      blockErase(adressenViHusker);
-      // blockErase(adressenViHusker);
-      // blockErase(adressenViHusker);
-      // delay(500);
+      // Det lykkedes at skrive
+      return true;
     }
     
+    /*
+     * Mon der burde låses igen? hmm
+     */
 }
 
-
-void checkBP(){
-  if(BP0 ||  BP1 || BP2){
-    Serial.println("Something is protected");
-  } else {
-    // Serial.println("NOT protected");
-  }
-}
-
-
-
-
-
-
-
-
-
-
-// ######################################
-// ####   SPECIFIC WRITE FUNCTIONS   ####
-// ######################################
-  /* SÅDAN SER WRITE-CYCLEN UD!
+void writeStuff(){
+  /* DENNE FUNKTION BRUGES IKKE MERE
+   *  
+   *  SÅDAN SER WRITE-CYCLEN UD!
    * ----------------------------
    * WREN                                         0x06
    * RDSR                                         0x05
@@ -172,11 +380,100 @@ void checkBP(){
    * RDSCUR command - Tjek om det lykkedes        0x2B
    *  ↳ P_FAIL / E_FAIL = 1?                       FORFRA! ALT ER DONE! :o
    * WREN = 0   0x04
+   *
+   * ------------------------------------------------------------------------------
+   * | TEKST-version:                                                             |
+   * ------------------------------------------------------------------------------
+   * || Write-Enable sendes (step 1) hvorefter vi afventer chippen er klar        |
+   * || til at modtage data (step 2). Dette tjekkes med bit 1 fra                 |
+   * || statusregistret (RDSR). Nu sættes chippen i Continously-Program (CP) mode |
+   * || (step 3). Hvordan denne fungerer kan læses i funktionen                   |
+   * || continouslyProgram(). Når continouslyProgram() er færdig med at skrive    |
+   * || data til flash'en tjekkes bit 0 fra RDSR (step 4) Er denne = 0, er        |
+   * || chippen færdig med at gemme og derfor klar til nye ting.                  |
+   * || For at tjekke om dataen blev skrevet til flashen tjekkes P_FAIL & E_FAIL  |
+   * || som er bit 5 & 6 fra RDSR. Er disse HIGH mislykkedes hele operationen og  |
+   * || hele writeStuff() skal køres forfra.                                      |
+   * ------------------------------------------------------------------------------
    */
+   
+    
+
+    // Vent på Write-Enable-Latch bliver 1
+    do{                     
+      writeEnable();        // Step 1  
+      writeStatusRegister();
+      readStatusRegister(); // Step 2
+    // Serial.print("RDSR: "); Serial.println(storeRDSR, BIN);
+    }while(!WEL);           // Step 2
+
+      // setGBULK();
+    RDBLOCK();
+
+
+
+    
+    // Fyr data afsted
+    // continouslyProgram();   // Step 3 <-- EKSISTERER IKKE MERE!
+
+
+    // Vent på Write-In-Progress bitten bliver 0 igen
+    do{                     // Step 4
+      readStatusRegister(); // Step 4
+      if(WIP){
+        Serial.println("WIP 1");
+      }
+    }while(WIP);            // Step 4
+
+    readRDSCUR();           // Step 5
+    
+    // Her tjekker vi om det faktisk lykkedes
+    if(bitRead(RDSCUR, 5) == 1 || bitRead(RDSCUR, 6) == 1){
+      // The programming failed! 
+      throwErrorMessage();
+    } else {
+      // Ting virkede!
+      // Denne else er overflødig
+      Serial.println("Ting virkede!");
+    }
+    // setGBLK();
+    writeDisable();
+    highSS(); // Vi er done nu
+}
+
+
+/*
+#################################################################################################
+ __          __  _____    _____   _______   ______         ______   _    _   _   _    _____     
+ \ \        / / |  __ \  |_   _| |__   __| |  ____|       |  ____| | |  | | | \ | |  / ____|    
+  \ \  /\  / /  | |__) |   | |      | |    | |__          | |__    | |  | | |  \| | | |         
+   \ \/  \/ /   |  _  /    | |      | |    |  __|         |  __|   | |  | | | . ` | | |         
+    \  /\  /    | | \ \   _| |_     | |    | |____        | |      | |__| | | |\  | | |____   _ 
+     \/  \/     |_|  \_\ |_____|    |_|    |______|       |_|       \____/  |_| \_|  \_____| (_)
+#################################################################################################
+*/
+          /* SÅDAN SER WRITE-CYCLEN UD!
+           * -----------------------------------------------------------------------------------
+           * Step | Navn                                        | Kommando
+           * 1:   |→ WREN                                         0x06
+           * 2:   |→ RDSR                                         0x05
+           *      |  ↳ WREN=1?                                    Bit 1 fra RDSR
+           * 3:   |→ Page Program                                 0x02 
+           *      |  ↳ Adressen                                   ADD(24)
+           *      |  ↳ Write data                                 DATA(AntalBytes) Fri længde
+           * 4:   |→ RDSR command                                 0x05
+           *      |  ↳ WIP = 0?                                   Bit 0 fra RDSR      
+           * 5:   |→ RDSCUR command - Tjek om det lykkedes        0x2B
+           *      |  ↳ P_FAIL / E_FAIL = 1?                       FORFRA! ALT ER RISTET! :o
+           * 6:   |→ WREN = 0   0x04
+           */
 
 
 void writeEnable(){
-  /* The sequence of issuing WREN instruction is: 
+  /* 
+   * Skrive Write Enable til chippen
+   * 
+   *  The sequence of issuing WREN instruction is: 
    *  1 → CS# goes low
    *  2 → sending WREN instruction code
    *  3 → CS# goes high.
@@ -190,7 +487,10 @@ void writeEnable(){
 } // writeEnable
 
 void writeDisable(){
-  /* The sequence of issuing WRDI instruction is: 
+  /* 
+   * Skriver Write Disable til chippen
+   *  
+   *  The sequence of issuing WRDI instruction is: 
    *  1 → CS# goes low
    *  2 → sending WRDI instruction code
    *  3 → CS# goes high. 
@@ -203,138 +503,33 @@ void writeDisable(){
   highSS();
 } // writeDisable
 
-void readStatusRegister(){
-  /* The sequence of issuing RDSR instruction is: 
-   *  1 → CS# goes low
-   *  2 → sending RDSR instruction code
-   *  3 → Status Register data out on MISO 
-   *  
-   *  Kilde: Databled pp. 17
-   */
-  highSS();                     // Cycle
-  lowSS();                      // Slave-select
-  transmitOneByteSPI(0x05);     // Step 2
-  storeRDSR = readOneByteSPI(); // Step 3
-  
-  if(bitRead(storeRDSR, 1) == 1){
-    WEL = 1;
-  } else {
-    WEL = 0;
-  }
-  if(bitRead(storeRDSR, 0) == 1){
-    WIP = 1;
-    // Serial.println("WIP = 1");
-  } else {
-    WIP = 0;
-    // Serial.println("WIP = 0");
-  }
-  if(bitRead(storeRDSR, 2) == 1){
-    BP0 = 1;
-  } else {
-    BP0 = 0;
-  }
-  if(bitRead(storeRDSR, 3) == 1){
-    BP1 = 1;
-  } else {
-    BP1 = 0;
-  }
-  if(bitRead(storeRDSR, 4) == 1){
-    BP2 = 1;
-  } else {
-    BP2 = 0;
-  }
-  if(bitRead(storeRDSR, 5) == 1){
-    
-  }
-  if(bitRead(storeRDSR, 6) == 1){
-    
-  }
-  if(bitRead(storeRDSR, 7) == 1){
-    // SRWD
-    // Serial.println("RDSR: SRWD = 1");
-  } else {
-    // Serial.println("RDSR: SRWD = 0");
-  }
-  
-  // highSS(); // High SS afterwards
-  // highSS(); // High SS afterwards
-}
+
 
 void sendContinouslyProgramCommand(){
   transmitOneByteSPI(0xAD); // CP command
   
 }
 
-void continouslyProgram(){
-/* The sequence of issuing CP instruction is: 
- *  1 → CS# goes low  
- *  2 → sending CP instruction code
- *  3 → 3-byte address on SI pin
- *  4 → two data bytes on SI
- *  5 → CS# goes high to low 
- *  6 → sending CP instruction and then continue two data bytes are programmed
- *  7 → CS# goes high to low
- *  8 → till last desired two data bytes are programmed
- *  9 → CS# goes high to low
- * 10 → sending WRDI (Write Disable) instruction to end CP mode
- *   
- * 10.5 → send RDSR instruction to verify if CP mode word program ends, or send RDSCUR to check bit4 to verify if CP mode ends. 
- */
-  highSS();                           // just to be safe
-  lowSS();                            // Step 1
-// Serial.println("sendContinouslyProgramCommand");
-  sendContinouslyProgramCommand();    // Step 2
-  sendAdress(adressenViHusker);           // Step 3 
-// Serial.println("Adress sent");
-  // Herefter bliver al dataen sendt afsted
-  for(int i = 0; i < 2; i++){
-  // Serial.println("For-loop");
-    // Først skal dataen opdeles, da de ligger i 16-bit samples
-    // og det kun er muligt at smide 1 byte afsted ad gangen.
-    transmitOneByteSPI((arrayToSaveToFlash[i]>>8)&0xFF);       // First data byte
-    transmitOneByteSPI(arrayToSaveToFlash[i]&0xFF);   // Second
 
-    // Cycle Slave-Select (HIGH → LOW)
-    cycleSS();  // Step 5
-
-    // Hvis der er mere data der skal afsted (aka min. 1 sample mere)
-    if(i < sizeof(arrayToSaveToFlash) - 1){
-      sendContinouslyProgramCommand(); // Step 6
-    }// if
-  }// for
-
-  // Cycle Slave-Select (HIGH → LOW)
-  cycleSS();      // Step 9 -> Jeg er ikke sikker på denne egentlig skal være her? 
-  writeDisable(); // Step 10
-  
-}// continouslyProgram
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// #####################################
-// ####   SPECIFIC READ FUNCTIONS   ####
-// #####################################
-  /*  The sequence of issuing READ instruction is: 
-   *   1 → CS# goes low
-   *   2 → sending READ instruction code
-   *   3 → 3-byte address on SI 
-   *   4 → data out on SO
-   *   5 → to end READ operation can use CS# to high at any time during data out. 
-   *   
-   *   Kilde: Datablad pp. 19
-   */
+/*
+#################################################################################################
+  _____    ______              _____          ______   _    _   _   _    _____     
+ |  __ \  |  ____|     /\     |  __ \        |  ____| | |  | | | \ | |  / ____|    
+ | |__) | | |__       /  \    | |  | |       | |__    | |  | | |  \| | | |         
+ |  _  /  |  __|     / /\ \   | |  | |       |  __|   | |  | | | . ` | | |         
+ | | \ \  | |____   / ____ \  | |__| |       | |      | |__| | | |\  | | |____   _ 
+ |_|  \_\ |______| /_/    \_\ |_____/        |_|       \____/  |_| \_|  \_____| (_)
+#################################################################################################
+*/
+                /*  The sequence of issuing READ instruction is: 
+                 *   1 → CS# goes low
+                 *   2 → sending READ instruction code
+                 *   3 → 3-byte address on SI 
+                 *   4 → data out on SO
+                 *   5 → to end READ operation can use CS# to high at any time during data out. 
+                 *   
+                 *   Kilde: Datablad pp. 19
+                 */
 
   void sendReadInstruction(){
     /*  Send read-kommandoen til flashen
@@ -359,27 +554,33 @@ void continouslyProgram(){
 
 
 
-
-// ##################################
-// ####   READ/WRITE FUNCTIONS   ####
-// ##################################
-
+/*
+#################################################################################################
+  __  __   _____   _____          ______   _    _   _   _    _____     
+ |  \/  | |_   _| |  __ \        |  ____| | |  | | | \ | |  / ____|    
+ | \  / |   | |   | |  | |       | |__    | |  | | |  \| | | |         
+ | |\/| |   | |   | |  | |       |  __|   | |  | | | . ` | | |         
+ | |  | |  _| |_  | |__| |       | |      | |__| | | |\  | | |____   _ 
+ |_|  |_| |_____| |_____/        |_|       \____/  |_| \_|  \_____| (_)
+#################################################################################################
+*/
 void sendAdress(uint32_t adress){
-  // Send adressen over SPI
+  /*
+   * Sender adressen over SPI
+   *  Ignorer mere end 24 bit, så ingen problemer der
+   */
 
   transmitOneByteSPI((adress >> 16) & 0xFF);  // ----|
-  transmitOneByteSPI((adress >> 8 ) & 0xFF);   //     |-> START Adressen i 24 bit
+  transmitOneByteSPI((adress >> 8 ) & 0xFF);  //     |-> START Adressen i 24 bit
   transmitOneByteSPI(adress&0x0000FF);        // ----|     á 8 bit pr. gang
-
-/*
-    transmitOneByteSPI(0x7E);// ----|
-    transmitOneByteSPI(0x80);//     |-> Adressen i 24 bit
-    transmitOneByteSPI(0x00);// ----|     á 8 bit pr. gang
-*/
 }
 
 
 byte readOneByteSPI(){
+  /*
+   * Denne funktion læser én byte fra SPI
+   */
+   
   byte tempInputData = 0x00;
   // Læs data
   lowMosi();
@@ -398,6 +599,10 @@ byte readOneByteSPI(){
 }
 
 void transmitOneByteSPI(char data){
+  /*
+   * Sender én byte via. SPI
+   */
+  
   // DDRB = DDRB|B00101111; // Set as output - Overflødig
   for(int i = 7; i >= 0; i--){
     if(bitRead(data,i) == 1){
@@ -412,26 +617,66 @@ void transmitOneByteSPI(char data){
 
 
 void readRDSCUR(){
-  // Read Security Register
+  /* 
+   *  Read Security Register
+   *    Denne bruges til at læse sikkerheds-registret
+   *    Bits betyder følgende:
+   *      0:  4k-bit factory lock
+   *      1:  Lockdown 
+   *      2:  Reserved
+   *      3:  Reserved
+   *      4:  Continously Program Mode (CP Mode)
+   *      5:  P_FAIL  (Program lykkes hvis denne er 0)
+   *      6:  E_FAIL  (Erase lykkes hvis denne er 0)
+   *      7:  Write Protection Select (WPSEL. 0 = Normal mode)
+   */
   lowSS();
   transmitOneByteSPI(0x2B);
   RDSCUR = readOneByteSPI();
   highSS();
+
+  P_FAIL = bitRead(RDSCUR, 5);
+  E_FAIL = bitRead(RDSCUR, 6);
+  WPSEL  = bitRead(RDSCUR, 7);
+}
+
+void readStatusRegister(){
+  /* The sequence of issuing RDSR instruction is: 
+   *  1 → CS# goes low
+   *  2 → sending RDSR instruction code
+   *  3 → Status Register data out on MISO 
+   *  
+   *  Kilde: Databled pp. 17
+   */
+  highSS();                     // Cycle
+  lowSS();                      // Slave-select
+  transmitOneByteSPI(0x05);     // Step 2
+  storeRDSR = readOneByteSPI(); // Step 3
   
-  if(bitRead(RDSCUR, 7) == 1){
-    // Serial.println("RDSCUR: WPSEL = 1");
-  } else {
-    // Serial.println("RDSCUR: WPSEL = 0");
-  }
+  WIP   = bitRead(storeRDSR, 0);
+  WEL   = bitRead(storeRDSR, 1);
+  BP0   = bitRead(storeRDSR, 2);
+  BP1   = bitRead(storeRDSR, 3);
+  BP2   = bitRead(storeRDSR, 4);
+  BP3   = bitRead(storeRDSR, 5);
+  QE    = bitRead(storeRDSR, 6);
+  SRWD  = bitRead(storeRDSR, 7);
+  
+  highSS();
 }
 
 void RDBLOCK(){
   /*  Send en RDBLOCK kommando og gem svaret
+   *   Denne kan kun bruges hvis WPSEL = 1
+   *    1 = Låst
+   *    0 = ulåst
+   *    
+   *    Funktionen bruges ikke
    *  
    *  → CS# goes low 
    *  → send RDBLOCK (3Ch) instruction 
-   *  → send 3 address bytes to assign one block on SI pin 
-   *  → read block's protection lock status bit on SO pin 
+   *  → send 3 address bytes to assign one block on SI pin  (24 bit)
+   *  → read block's protection lock status bit on SO pin   ( 1 bit)
    *  → CS# goes high. 
    */
   lowSS();
@@ -441,7 +686,7 @@ void RDBLOCK(){
   tempRDBLOCK = readOneByteSPI();
   tempRDBLOCK = tempRDBLOCK & 0xFF;
   
-  if(tempRDBLOCK == 0xFF){
+  if(tempRDBLOCK == 0x01){
     // Der er låst!
     Serial.print("L--RDBLOCK:\t"); Serial.println(tempRDBLOCK, BIN);
   } else {
@@ -452,12 +697,25 @@ void RDBLOCK(){
 }
 
 void blockErase(uint32_t adress){
+  /*
+   * Sletter en hel block (64k-byte)
+   *  Er blokken låst (BP0-BP3 = 1, eller WPSEL = 1) sker der ingen ting
+   *  
+   */
   lowSS();
   writeEnable();
   lowSS();
   transmitOneByteSPI(0xD8);
   sendAdress(adress);
   highSS();
+  
+  waitUntilWorkIsDone();
+}
+
+void waitUntilWorkIsDone(){
+  /*
+   * Denne funktion venter på WIP bliver LOW
+   */
   do{
     readStatusRegister();
     highSS(); // High SS afterwards
@@ -467,7 +725,11 @@ void blockErase(uint32_t adress){
 
 
 void setGBULK(){
-  /*  Flow: 
+  /*  
+   *  Gang Block Unlock
+   *    Låser en hel blok op
+   *    
+   *   Flow: 
    * → CS# goes low 
    * → send GBULK (0x98) instruction 
    * → CS# goes high <- DEN SKAL VÆRE SAMMEN MED DEN SIDSTE DATA-BIT!
@@ -500,7 +762,7 @@ void setGBULK(){
   PORTB |=    B00100100;// Her settes clocken OG SS samtidig
   PORTB &=    B11011111;// Low clock
   
-  // No need for highSS();
+  // Ikke brug for highSS() bagefter
 
 
   /* Bruges til skabelon til Bit 0
@@ -512,7 +774,10 @@ void setGBULK(){
 }
 
 void setGBLK(){
-  /*  Flow: 
+  /*  Gang Block Lock
+   *   Låser en hel blok
+   *   
+   *   Flow: 
    * → CS# goes low 
    * → send GBLK (0x7E) instruction 
    * → CS# goes high <- DEN SKAL VÆRE SAMMEN MED DEN SIDSTE DATA-BIT!
@@ -556,10 +821,26 @@ void setGBLK(){
   
 }
 
+boolean isBlocksLocked(){
+  /*
+   * Tjekker om nogle blocke er låst.
+   *  Returnerer true hvis låst
+   *  Returnerer false hvis ulåst
+   */
+  if(BP0 ||  BP1 || BP2 || BP3){
+    // Serial.println("Something is protected");
+    return true;
+  } else {
+    // Serial.println("NOT protected");
+    return false;
+  }
+}
+
 void writeStatusRegister(){
-  // Write Status Register
-  
-  /* The sequence of issuing WRSR instruction is: 
+  /* 
+   *  Write Status Register
+   *  
+   *  The sequence of issuing WRSR instruction is: 
    *  → CS# goes low
    *  → sending WRSR instruction code
    *  → Status Register data on SI
@@ -609,242 +890,20 @@ void writeStatusRegister(){
 }
 
 
-
-
-
-
-
-
-// ##################################
-// ####   READ/WRITE FUNCTIONS   ####
-// ##################################
-void readTwoBytes(){
-  /*  The sequence of issuing READ instruction is: 
-   *   1 → CS# goes low
-   *   2 → sending READ instruction code
-   *   3 → 3-byte address on SI 
-   *   4 → data out on MISO
-   *   5 → to end READ operation can use CS# to high at any time during data out. 
-   *   
-   *   Kilde: Datablad pp. 19
-   */
-// Serial.println("readTwoBytes");
-  lowSS();                  // Step 1
-  sendReadInstruction();    // Step 2
-  sendAdress((adressenViHusker)); // Step 3
-  
-
-  /*
-    transmitOneByteSPI(0x7E);// ----|
-    transmitOneByteSPI(0x80);//     |-> Adressen i 24 bit
-    transmitOneByteSPI(0x00);// ----|     á 8 bit pr. gang
-  */
-
-  // Step 4 
-  
-  for(int i = 0; i < sizeof(arrayToSaveToFlash); i++){
-    storeReadData[i] = readOneByteSPI();//  ---|-> Læser 2x8 bit og gemmer dem
-    // Serial.print("Read:\t\t"); Serial.println(storeReadData[i], HEX);
-  }
-  
-  
-  highSS();  // Step 5
-  // Vi er done
-}
-
-void writeStuff(){
-  /* SÅDAN SER WRITE-CYCLEN UD!
-   * ----------------------------
-   * WREN                                         0x06
-   * RDSR                                         0x05
-   *  ↳ WREN=1?                                    Bit 1 fra RDSR
-   * Contenious program mode                      0xAD 
-   *  ↳ Adressen                                   ADD(24)
-   *  ↳ Write data                                 DATA(16)
-   * RDSR command                                 0x05
-   *  ↳ WIP = 0?                                   Bit 0 fra RDSR      
-   * RDSCUR command - Tjek om det lykkedes        0x2B
-   *  ↳ P_FAIL / E_FAIL = 1?                       FORFRA! ALT ER DONE! :o
-   * WREN = 0   0x04
-   *
-   * ------------------------------------------------------------------------------
-   * | TEKST-version:                                                             |
-   * ------------------------------------------------------------------------------
-   * || Write-Enable sendes (step 1) hvorefter vi afventer chippen er klar        |
-   * || til at modtage data (step 2). Dette tjekkes med bit 1 fra                 |
-   * || statusregistret (RDSR). Nu sættes chippen i Continously-Program (CP) mode |
-   * || (step 3). Hvordan denne fungerer kan læses i funktionen                   |
-   * || continouslyProgram(). Når continouslyProgram() er færdig med at skrive    |
-   * || data til flash'en tjekkes bit 0 fra RDSR (step 4) Er denne = 0, er        |
-   * || chippen færdig med at gemme og derfor klar til nye ting.                  |
-   * || For at tjekke om dataen blev skrevet til flashen tjekkes P_FAIL & E_FAIL  |
-   * || som er bit 5 & 6 fra RDSR. Er disse HIGH mislykkedes hele operationen og  |
-   * || hele writeStuff() skal køres forfra.                                      |
-   * ------------------------------------------------------------------------------
-   */
-   
-    
-
-    // Vent på Write-Enable-Latch bliver 1
-    do{                     
-      writeEnable();        // Step 1  
-      writeStatusRegister();
-      readStatusRegister(); // Step 2
-    // Serial.print("RDSR: "); Serial.println(storeRDSR, BIN);
-    }while(!WEL);           // Step 2
-
-      // setGBULK();
-    RDBLOCK();
-
-
-
-    
-    // Fyr data afsted
-    continouslyProgram();   // Step 3
-
-
-    // Vent på Write-In-Progress bitten bliver 0 igen
-    do{                     // Step 4
-      readStatusRegister(); // Step 4
-      if(WIP){
-        Serial.println("WIP 1");
-      }
-    }while(WIP);            // Step 4
-
-    readRDSCUR();           // Step 5
-    
-    // Her tjekker vi om det faktisk lykkedes
-    if(bitRead(RDSCUR, 5) == 1 || bitRead(RDSCUR, 6) == 1){
-      // The programming failed! 
-      throwErrorMessage();
-    } else {
-      // Ting virkede!
-      // Denne else er overflødig
-      Serial.println("Ting virkede!");
-    }
-    // setGBLK();
-    writeDisable();
-    highSS(); // Vi er done nu
-}
-
-void pageProgram(){
-  /* The sequence of issuing PP instruction is: 
-   *  → Write Enable
-   *  
-   *  → CS# goes low
-   *  → sending PP instruction code
-   *  → 3-byte address on SI
-   *    → at least 1-byte on data on SI
-   *  → CS# goes high.  
-   */
-
-    //    De adresse-variabler vi har
-    // uint32_t adressenViHusker = BASIC_ADRESS;
-    // const uint32_t startAdressen = BASIC_ADRESS;
-
-    lowSS();
-    // Gør klar til at sende data afsted
-    // writeEnable();
-    readStatusRegister();
-    highSS();
-    do{                     
-      // lowSS();
-      writeEnable();        // Write Enable 
-      // writeEnable();        // Write Enable 
-      // writeEnable();        // Write Enable 
-      lowSS();
-      readStatusRegister(); // Write Enable 
-      highSS();
-    
-      delay(5);
-    // Serial.print("RDSR: "); Serial.println(storeRDSR, BIN);
-    }while(!WEL && WIP);           // Write Enable 
-      
-    highSS();
-    lowSS();
-
-    transmitOneByteSPI(0x02);       // Sender kommandoen om Page Program
-    
-
-    
-    sendAdress(adressenViHusker);   // Sender adressen
-    
-    for(int i = 0; i < sizeof(arrayToSaveToFlash); i++){
-      transmitOneByteSPI(arrayToSaveToFlash[i]);
-      // Serial.print("Skriver:\t"); Serial.println(arrayToSaveToFlash[i], HEX);
-    }
 /*
-    for(int k = 0; k < 2048 - sizeof(arrayToSaveToFlash); k++){
-      emptyBytes();
-    }
+#################################################################################################
+   ____    _______   _    _   ______   _____          ______   _    _   _   _    _____     
+  / __ \  |__   __| | |  | | |  ____| |  __ \        |  ____| | |  | | | \ | |  / ____|    
+ | |  | |    | |    | |__| | | |__    | |__) |       | |__    | |  | | |  \| | | |         
+ | |  | |    | |    |  __  | |  __|   |  _  /        |  __|   | |  | | | . ` | | |         
+ | |__| |    | |    | |  | | | |____  | | \ \        | |      | |__| | | |\  | | |____   _ 
+  \____/     |_|    |_|  |_| |______| |_|  \_\       |_|       \____/  |_| \_|  \_____| (_)
+#################################################################################################
 */
-    
-
-    // Sender den sidste byte!
-    highMosi();
-    for(int k = 7; k > 0; k--){
-      cycleClock();
-    }
-    PORTB = B00100000; // HIGH CLOCK
-    PORTB = B00000100; // HIGH SS + LOW CLOCK
-    
-    
-    // Serial.print("PORTB:\t"); Serial.println(PORTB, BIN);
-    // Færdig med at sende den sidste byte her
-    
-    
-    // SS er høj på dette tidspunkt
-    // Nu gemmer chippen sager!
-    delay(5); // Ifølge databladet (tPP) er chippen max 5 ms om at gemme
-
-    
-    // Vent på Write-In-Progress bitten bliver 0 igen
-    do{                     // Step 4
-      writeDisable();
-      readStatusRegister(); // Step 4
-      readRDSCUR();           // Step 5
-      // Serial.println("Venter slut");
-      delay(1);
-      /*
-      if(WIP){
-        Serial.println("WIP 1");
-      }
-      */
-    }while(WIP && WEL);            // Step 4
-  
-    
-    
-    // Her tjekker vi om det faktisk lykkedes
-    if(bitRead(RDSCUR, 5) == 1 || bitRead(RDSCUR, 6) == 1){
-      // The programming failed! 
-      throwErrorMessage();
-    } else {
-      // Ting virkede!
-      // Denne else er overflødig
-      // Serial.println("Ting virkede!");
-    }
-    // setGBLK();
-    writeDisable();
-    highSS(); // Vi er done nu
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// #############################
-// ####   OTHER FUNCTIONS   ####
-// #############################
 void throwErrorMessage(){
+  /*
+   * Skriver bare en fejlmeddelelse
+   */
   Serial.println("-------------------------------------------");
   Serial.println("Something went wrong because you are stupid");
   Serial.println("-------------------------------------------");
@@ -853,22 +912,48 @@ void throwErrorMessage(){
   Serial.println("-------------------------------------------");
 }
 
+void printReadData(){   
+  /*
+   * Skriver den læste data til Serial
+   */
+  Serial.println();  
+  for(int i = 0; i < sizeof(arrayToSaveToFlash); i+=4){
+    Serial.print("SRD["); Serial.print(i); Serial.print("]:\t"); Serial.print(storeReadData[i], HEX); Serial.print("\t");
+    Serial.print("SRD["); Serial.print(i+1); Serial.print("]:\t"); Serial.print(storeReadData[i+1], HEX); Serial.print("\t");
+    Serial.print("SRD["); Serial.print(i+2); Serial.print("]:\t"); Serial.print(storeReadData[i+2], HEX); Serial.print("\t");
+    Serial.print("SRD["); Serial.print(i+3); Serial.print("]:\t"); Serial.println(storeReadData[i+3], HEX);
+  
+  }
+}
+
+bool compareData(){
+  /*
+   * Sammenligner det læste med det skrevne.
+   *  Returnerer:
+   *    false:  Alt er godt
+   *    true :  Det lårt
+   */
+  bool mistake = false;
+  for(int i = 0; i < sizeof(arrayToSaveToFlash); i++){  
+    if(storeReadData[i] != arrayToSaveToFlash[i]){
+      Serial.print("storeReadData["); Serial.print(i); Serial.print("] IKKE ENS\n");
+      mistake = true;
+    }
+  }
+  return mistake;
+}
 
 
-
-
-
-
-
-
-
-
-
-
-
-// #############################
-// ####   BASIC FUNCTIONS   ####
-// #############################
+/*
+#################################################################################################
+  ____                _____   _____    _____         ______   _    _   _   _    _____     
+ |  _ \      /\      / ____| |_   _|  / ____|       |  ____| | |  | | | \ | |  / ____|    
+ | |_) |    /  \    | (___     | |   | |            | |__    | |  | | |  \| | | |         
+ |  _ <    / /\ \    \___ \    | |   | |            |  __|   | |  | | | . ` | | |         
+ | |_) |  / ____ \   ____) |  _| |_  | |____        | |      | |__| | | |\  | | |____   _ 
+ |____/  /_/    \_\ |_____/  |_____|  \_____|       |_|       \____/  |_| \_|  \_____| (_)
+#################################################################################################
+*/
 
 void emptyBytes(){
   lowMosi();
@@ -918,5 +1003,54 @@ void highClock(){
 void lowClock(){
   //DDRB = DDRB|B00101111;  // Set as output - Overflødig
   PORTB &=    B11011111;   // Set low
-}   // JEG ER RET SEJ!
+}
+
+
+
+void continouslyProgram(){
+/* BRUGES IKKE MERE!
+ *  The sequence of issuing CP instruction is: 
+ *  1 → CS# goes low  
+ *  2 → sending CP instruction code
+ *  3 → 3-byte address on SI pin
+ *  4 → two data bytes on SI
+ *  5 → CS# goes high to low 
+ *  6 → sending CP instruction and then continue two data bytes are programmed
+ *  7 → CS# goes high to low
+ *  8 → till last desired two data bytes are programmed
+ *  9 → CS# goes high to low
+ * 10 → sending WRDI (Write Disable) instruction to end CP mode
+ *   
+ * 10.5 → send RDSR instruction to verify if CP mode word program ends, or send RDSCUR to check bit4 to verify if CP mode ends. 
+ */
+  highSS();                           // just to be safe
+  lowSS();                            // Step 1
+// Serial.println("sendContinouslyProgramCommand");
+  sendContinouslyProgramCommand();    // Step 2
+  sendAdress(adressenViHusker);           // Step 3 
+// Serial.println("Adress sent");
+  // Herefter bliver al dataen sendt afsted
+  for(int i = 0; i < 2; i++){
+  // Serial.println("For-loop");
+    // Først skal dataen opdeles, da de ligger i 16-bit samples
+    // og det kun er muligt at smide 1 byte afsted ad gangen.
+    transmitOneByteSPI((arrayToSaveToFlash[i]>>8)&0xFF);       // First data byte
+    transmitOneByteSPI(arrayToSaveToFlash[i]&0xFF);   // Second
+
+    // Cycle Slave-Select (HIGH → LOW)
+    cycleSS();  // Step 5
+
+    // Hvis der er mere data der skal afsted (aka min. 1 sample mere)
+    if(i < sizeof(arrayToSaveToFlash) - 1){
+      sendContinouslyProgramCommand(); // Step 6
+    }// if
+  }// for
+
+  // Cycle Slave-Select (HIGH → LOW)
+  cycleSS();      // Step 9 -> Jeg er ikke sikker på denne egentlig skal være her? 
+  writeDisable(); // Step 10
+  
+}// continouslyProgram
+
+
 
