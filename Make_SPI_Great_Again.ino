@@ -70,6 +70,13 @@ void loop() {
   // Resetter globale variabler
   // storeReadData[0]  = 0x00;
   // storeReadData[1]  = 0x00;
+  Serial.print("adressenViHusker:\t"); Serial.println(adressenViHusker, HEX);
+  /*
+      blockErase(adressenViHusker);
+      blockErase(adressenViHusker);
+      blockErase(adressenViHusker);
+  delay(100);
+  */
   for(int i = 0; i < sizeof(arrayToSaveToFlash); i++){
     storeReadData[i] = 0x00;
   }
@@ -123,8 +130,12 @@ void loop() {
       
     } else {
       adressenViHusker += (sizeof(arrayToSaveToFlash));
+      blockErase(adressenViHusker);
+      // blockErase(adressenViHusker);
+      // blockErase(adressenViHusker);
+      // delay(500);
     }
-    Serial.print("adressenViHusker:\t"); Serial.println(adressenViHusker, HEX);
+    
 }
 
 
@@ -447,8 +458,11 @@ void blockErase(uint32_t adress){
   transmitOneByteSPI(0xD8);
   sendAdress(adress);
   highSS();
-  delay(50);
-  
+  do{
+    readStatusRegister();
+    highSS(); // High SS afterwards
+    delayMicroseconds(1);
+  } while(WIP); 
 }
 
 
