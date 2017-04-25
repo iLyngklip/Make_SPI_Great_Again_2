@@ -35,7 +35,10 @@
  * |  SS:      10 | B00000100 |  09         |
  * ------------------------------------------
  */
-
+  #define DUE_CLOCK   13
+  #define DUE_MISO    12
+  #define DUE_MOSI    11
+  #define DUE_SS      10
  
 /*
 #################################################################################################
@@ -183,7 +186,16 @@ boolean WPSEL   = true;
 #################################################################################################
 */
 void setup() {
-  DDRB = DDRB|B00101111; // Set input/output pinmodes
+  #if defined(ARDUINO_AVR_UNO)
+    DDRB = DDRB|B00101111; // Set input/output pinmodes
+  
+  #elif defined(ARDUINO_SAM_DUE)
+    pinMode(DUE_CLOCK,  OUTPUT);
+    pinMode(DUE_MISO,   INPUT_PULLUP); 
+    pinMode(DUE_MOSI,   OUTPUT);
+    pinMode(DUE_SS,     OUTPUT);
+  #endif
+  
 
   Serial.begin(250000);
   blockErase(adressenViHusker);
@@ -586,15 +598,29 @@ byte readOneByteSPI(){
   lowMosi();
   // cycleClock();    DA DER LIGE ER BLEVET SENDT EN KOMMANDO ER DER
   //                  IKKE BEHOV FOR AT CYCLE CLOCKEN
+  #if defined(ARDUINO_AVR_UNO)
+    
+    for(int k = 7; k >= 0; k--){
+      highClock();
+      // Hvis data in er HIGH efter falling-edge clock
+      if(bitRead(PINB, 4)){
+        bitSet(tempInputData, k);  // Sæt den pågældende bit high
+      } 
+      lowClock();
+    }// for
+    
+  #elif defined(ARDUINO_SAM_DUE)
+    
+    for(int k = 7; k >= 0; k--){
+      highClock();
+      if(digitalRead(DUE_MISO)){
+        bitSet(tempInputData, k);
+      }
+      lowClock();
+    }
+    
+  #endif
   
-  for(int k = 7; k >= 0; k--){
-    highClock();
-    // Hvis data in er HIGH efter falling-edge clock
-    if(bitRead(PINB, 4)){
-      bitSet(tempInputData, k);  // Sæt den pågældende bit high
-    } 
-    lowClock();
-  }// for
   return tempInputData;
 }
 
@@ -734,7 +760,7 @@ void setGBULK(){
    * → send GBULK (0x98) instruction 
    * → CS# goes high <- DEN SKAL VÆRE SAMMEN MED DEN SIDSTE DATA-BIT!
    */
-
+#if defined(ARDUINO_AVR_UNO)
   lowSS();
 
   highMosi();//   |
@@ -770,7 +796,10 @@ void setGBULK(){
     PORTB |=    B00100000;  // Set it to high // CLOCK
     PORTB |=    B00000100;  // Set it to high // SS
   */
-  
+  #elif defined(ARDUINO_SAM_DUE)
+    // GØR TING FOR DUO-EN
+      
+  #endif
 }
 
 void setGBLK(){
@@ -782,7 +811,7 @@ void setGBLK(){
    * → send GBLK (0x7E) instruction 
    * → CS# goes high <- DEN SKAL VÆRE SAMMEN MED DEN SIDSTE DATA-BIT!
    */
-
+#if defined(ARDUINO_AVR_UNO)
   lowSS();
 
   lowMosi();//    |
@@ -818,6 +847,11 @@ void setGBLK(){
     PORTB |=    B00100000;  // Set it to high // CLOCK
     PORTB |=    B00000100;  // Set it to high // SS
   */
+  #elif defined(ARDUINO_SAM_DUE)
+    // GØR TING FOR DUO-EN
+      
+  #endif
+  
   
 }
 
@@ -847,48 +881,54 @@ void writeStatusRegister(){
    *  → CS# goes high.
    * 
    */
-  lowSS();
-  do{                     
-      writeEnable();        //   
-      readStatusRegister(); // 
-    // Serial.print("RDSR: "); Serial.println(storeRDSR, BIN);
-    }while(!WEL);           // 
+  #if defined(ARDUINO_AVR_UNO)
+    lowSS();
+    do{                     
+        writeEnable();        //   
+        readStatusRegister(); // 
+      // Serial.print("RDSR: "); Serial.println(storeRDSR, BIN);
+      }while(!WEL);           // 
+    
+    highSS();
+    lowSS();
+    
+    transmitOneByteSPI(0x01);
+    
   
-  highSS();
-  lowSS();
+    highMosi();//   |
+    cycleClock();// |-> Bit 7
   
-  transmitOneByteSPI(0x01);
+    lowMosi();//    |
+    cycleClock();// |-> Bit 6
   
-
-  highMosi();//   |
-  cycleClock();// |-> Bit 7
-
-  lowMosi();//    |
-  cycleClock();// |-> Bit 6
-
-  lowMosi();//    |
-  cycleClock();// |-> Bit 5
-
-  lowMosi();//    |
-  cycleClock();// |-> Bit 4
+    lowMosi();//    |
+    cycleClock();// |-> Bit 5
   
-  lowMosi();//    |
-  cycleClock();// |-> Bit 3
-
-  lowMosi();//    |
-  cycleClock();// |-> Bit 2
-
-  highMosi();//   |
-  cycleClock();// |-> Bit 1
-
-  lowMosi();//    |-> Bit 0
-  PORTB |=    B00100100;// Her settes clocken OG SS samtidig
-  PORTB &=    B11011111;// Low clock
-  // SS er high
+    lowMosi();//    |
+    cycleClock();// |-> Bit 4
+    
+    lowMosi();//    |
+    cycleClock();// |-> Bit 3
+  
+    lowMosi();//    |
+    cycleClock();// |-> Bit 2
+  
+    highMosi();//   |
+    cycleClock();// |-> Bit 1
+  
+    lowMosi();//    |-> Bit 0
+    PORTB |=    B00100100;// Her settes clocken OG SS samtidig
+    PORTB &=    B11011111;// Low clock
+    // SS er high
+    
+  #elif defined(ARDUINO_SAM_DUE)
+    // GØR TING FOR DUO-EN
+      
+  #endif
 
   
 }
-
+  
 
 /*
 #################################################################################################
@@ -954,7 +994,12 @@ bool compareData(){
  |____/  /_/    \_\ |_____/  |_____|  \_____|       |_|       \____/  |_| \_|  \_____| (_)
 #################################################################################################
 */
-
+/*
+#define DUE_CLOCK   13
+#define DUE_MISO    12
+#define DUE_MOSI    11
+#define DUE_SS      10
+ */
 void emptyBytes(){
   lowMosi();
   for(int i = 8; i > 0; i--){
@@ -977,32 +1022,58 @@ void cycleClock(){
 
 void lowMosi(){
   //DDRB = DDRB|B00101111;  // Set as output - Overflødig
-  PORTB &=    B11110111;   // Set low
+  #if defined(ARDUINO_AVR_UNO)
+    PORTB &=    B11110111;   // Set low
+  
+  #elif defined(ARDUINO_SAM_DUE)
+    digitalWrite(DUE_MOSI, LOW);
+  #endif
+  
 }
 
 void highMosi(){
-  //DDRB = DDRB|B00101111; // Set as output - Overflødig
-  PORTB |=    B00001000;  // Set it to high
+  #if defined(ARDUINO_AVR_UNO)
+    //DDRB = DDRB|B00101111; // Set as output - Overflødig
+    PORTB |=    B00001000;  // Set it to high
+  #elif defined(ARDUINO_SAM_DUE)
+    digitalWrite(DUE_MOSI, HIGH);
+  #endif
 }
 
 void lowSS(){
-  //DDRB = DDRB|B00101111;  // Set as output - Overflødig
-  PORTB &=    B11111011;   // Set low
+  #if defined(ARDUINO_AVR_UNO)
+    //DDRB = DDRB|B00101111;  // Set as output - Overflødig
+    PORTB &=    B11111011;   // Set low
+  #elif defined(ARDUINO_SAM_DUE)
+    digitalWrite(DUE_SS, LOW);
+  #endif
 }
 
 void highSS(){
-  //DDRB = DDRB|B00101111; // Set as output - Overflødig
-  PORTB |=    B00000100;  // Set it to high
+  #if defined(ARDUINO_AVR_UNO)
+    //DDRB = DDRB|B00101111; // Set as output - Overflødig
+    PORTB |=    B00000100;  // Set it to high
+  #elif defined(ARDUINO_SAM_DUE)
+    digitalWrite(DUE_SS, HIGH);
+  #endif
 }
 
 void highClock(){
-  //DDRB = DDRB|B00101111; // Set as output - Overflødig
-  PORTB |=    B00100000;  // Set it to high
+  #if defined(ARDUINO_AVR_UNO)
+    //DDRB = DDRB|B00101111; // Set as output - Overflødig
+    PORTB |=    B00100000;  // Set it to high
+  #elif defined(ARDUINO_SAM_DUE)
+    digitalWrite(DUE_CLOCK, HIGH);
+  #endif
 }
 
 void lowClock(){
-  //DDRB = DDRB|B00101111;  // Set as output - Overflødig
-  PORTB &=    B11011111;   // Set low
+  #if defined(ARDUINO_AVR_UNO)
+    //DDRB = DDRB|B00101111;  // Set as output - Overflødig
+    PORTB &=    B11011111;   // Set low
+  #elif defined(ARDUINO_SAM_DUE)
+    digitalWrite(DUE_CLOCK, LOW);
+  #endif    
 }
 
 
