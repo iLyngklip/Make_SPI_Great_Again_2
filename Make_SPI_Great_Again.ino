@@ -387,7 +387,7 @@ void setup() {
   Serial.begin(250000);
   blockErase(adressenViHusker);
   Serial.print("sizeof(arrayToSaveToFlash):\t"); Serial.println(sizeof(arrayToSaveToFlash));
-  Serial.print("sizeof(stuff):\t"); Serial.println(sizeof(stuff));
+  Serial.print("sizeof(kickSample):\t"); Serial.println(sizeof(kickSample));
   #if SHOULD_WIPE_WHOLE_CHIP == 1
     Serial.println("Erasing");
     chipErase();
@@ -399,7 +399,15 @@ void setup() {
   Serial.println("---Korer process in 2 sec.---");
   delay(2000);
   
-
+  Serial.println();  
+  for(int i = 0; i < sizeof(kickSample); i+=4){
+    Serial.print("SRD["); Serial.print(i); Serial.print("]:\t"); Serial.print(kickSample[i], HEX); Serial.print("\t");
+    Serial.print("SRD["); Serial.print(i+1); Serial.print("]:\t"); Serial.print(kickSample[i+1], HEX); Serial.print("\t");
+    Serial.print("SRD["); Serial.print(i+2); Serial.print("]:\t"); Serial.print(kickSample[i+2], HEX); Serial.print("\t");
+    Serial.print("SRD["); Serial.print(i+3); Serial.print("]:\t"); Serial.println(kickSample[i+3], HEX);
+  
+  }
+  while(1);
 /*##########################################
  *##########################################
  *  PROGRAMMERER                          ##
@@ -423,7 +431,7 @@ void setup() {
         #endif
         lykkesDetAtSkrive = pageProgram(adressenViHusker, antal256bytes);  // Page program først!
       } while(!lykkesDetAtSkrive);
-      adressenViHusker +=0x000100;
+      adressenViHusker += 0x000100;
     }
     
     
