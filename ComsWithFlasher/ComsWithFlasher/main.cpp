@@ -25,7 +25,7 @@ int main()
     printf("test");
     while (true)
     {
-        /*
+        
         // file = fopen("/dev/cu.usbmodem1D11111", "w");
         cout << ">>" << endl;
         while(getnum == 0){
@@ -53,8 +53,8 @@ int main()
 int main () {
     string tempString;
     
-    ofstream writeFile ("/Users/iLyngklip/Documents/Arduino/Make_SPI_Great_Again/ComsWithFlasher/ComsWithFlasher/example.txt");
-    ifstream readFile ("/Users/iLyngklip/Documents/Arduino/Make_SPI_Great_Again/ComsWithFlasher/ComsWithFlasher/Kick.txt");
+    ofstream writeFile ("/Users/iLyngklip/Documents/Arduino/Make_SPI_Great_Again/ComsWithFlasher/ComsWithFlasher/Færdig_arduino_kode/clap.txt");
+    ifstream readFile ("/Users/iLyngklip/Documents/Arduino/Make_SPI_Great_Again/ComsWithFlasher/ComsWithFlasher/clap.txt");
     if (writeFile.is_open() && readFile.is_open())
     {
         /*
@@ -76,14 +76,17 @@ int main () {
             for(int k = 0; k < 16; k++){
                 tempString.append(("0x"));
                 char tempChar;
+                char tempChar2;
                 do{
                     tempChar = (char)readFile.get();
                 } while ((tempChar <= '0' && tempChar >= '9' && tempChar <= 'a' && tempChar >= 'z') || tempChar == 10 || tempChar == 13);
-                tempString.push_back((char)tempChar);
+                
                 
                 do{
-                    tempChar = (char)readFile.get();
-                } while ((tempChar <= '0' && tempChar >= '9' && tempChar <= 'a' && tempChar >= 'z') || tempChar == 10 || tempChar == 13);
+                    tempChar2 = (char)readFile.get();
+                } while ((tempChar2 <= '0' && tempChar2 >= '9' && tempChar2 <= 'a' && tempChar2 >= 'z') || tempChar2 == 10 || tempChar2 == 13);
+                
+                tempString.push_back((char)tempChar2);
                 tempString.push_back((char)tempChar);
                 tempString.append(", ");
                 length++;

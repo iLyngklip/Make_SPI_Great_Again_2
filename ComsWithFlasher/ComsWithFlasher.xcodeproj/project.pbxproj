@@ -25,6 +25,11 @@
 /* Begin PBXFileReference section */
 		767F19B31EAF28F400B5094B /* ComsWithFlasher */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ComsWithFlasher; sourceTree = BUILT_PRODUCTS_DIR; };
 		767F19B61EAF28F400B5094B /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		76FF07221EB0B21800E94C60 /* AudioSamples.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AudioSamples.h; sourceTree = "<group>"; };
+		76FF07231EB0B23700E94C60 /* clap.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = clap.txt; path = "Færdig_arduino_kode/clap.txt"; sourceTree = "<group>"; };
+		76FF07241EB0B23700E94C60 /* hat.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = hat.txt; path = "Færdig_arduino_kode/hat.txt"; sourceTree = "<group>"; };
+		76FF07251EB0B23700E94C60 /* kick.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = kick.txt; path = "Færdig_arduino_kode/kick.txt"; sourceTree = "<group>"; };
+		76FF07261EB0B23700E94C60 /* snare.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = snare.txt; path = "Færdig_arduino_kode/snare.txt"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +62,11 @@
 		767F19B51EAF28F400B5094B /* ComsWithFlasher */ = {
 			isa = PBXGroup;
 			children = (
+				76FF07231EB0B23700E94C60 /* clap.txt */,
+				76FF07241EB0B23700E94C60 /* hat.txt */,
+				76FF07251EB0B23700E94C60 /* kick.txt */,
+				76FF07261EB0B23700E94C60 /* snare.txt */,
+				76FF07221EB0B21800E94C60 /* AudioSamples.h */,
 				767F19B61EAF28F400B5094B /* main.cpp */,
 			);
 			path = ComsWithFlasher;
@@ -239,6 +249,7 @@
 				767F19BC1EAF28F400B5094B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
