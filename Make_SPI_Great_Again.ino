@@ -4147,7 +4147,7 @@ const byte arrayToSaveToFlash[4][18941] = {
 };
 
 
-byte arrayLengths[] = {
+uint16_t arrayLengths[] = {
   18941, 
   13981,
   18941,
@@ -4185,7 +4185,7 @@ byte arrayLengths[] = {
   // Adressen hvortil der skrives. 0x0 for at deaktivere
   #define STOP_ADRESS       0x000000
 
-#define SHOULD_WIPE_WHOLE_CHIP 0
+#define SHOULD_WIPE_WHOLE_CHIP 1
   // 0: Disable 
   // 1: Enable
 
@@ -4530,7 +4530,7 @@ void setup() {
   
 
   Serial.begin(250000);
-  blockErase(adressenViHusker);
+  // blockErase(adressenViHusker);
   /*
     Serial.print("sizeof(arrayToSaveToFlash):\t"); Serial.println(sizeof(arrayToSaveToFlash));
     Serial.print("sizeof(kickSample):\t"); Serial.println(sizeof(kickSample));
@@ -4570,7 +4570,7 @@ void setup() {
  Serial.println("Programmerer");
   #if CHOOSE_PROGRAM_MODE == PP
   
-  uint8_t tempVal = 0;
+  uint16_t tempVal = 0;
     /*
     0: #define KICK_ADRESS     0x010000
     1: #define SNARE_ADRESS    0x020000
@@ -4580,26 +4580,68 @@ void setup() {
    
     for(int sampleNr = 0; sampleNr < 4; sampleNr++){
       tempVal = (arrayLengths[sampleNr] - (arrayLengths[sampleNr] % 256)) / 256;
-      Serial.print("tempVal:\t"); Serial.print(tempVal); Serial.print("\tShould be:\t"); Serial.println((arrayLengths[sampleNr] - (arrayLengths[sampleNr] % 256)));
-      Serial.print("arrayLengths[sampleNr]%256:\t"); Serial.println((arrayLengths[sampleNr] % 256));
+      uint32_t tempAdresse = 0;
+      Serial.print("tempVal:\t"); Serial.println(tempVal);
+      // Serial.print("arrayLengths[sampleNr]%256:\t"); Serial.println((arrayLengths[sampleNr] % 256));
       switch(sampleNr){
         case 0:
+          // KICK sample
+          tempAdresse = KICK_ADRESS;
           for(int antal256bytes = 0; antal256bytes < tempVal; antal256bytes++){
             boolean lykkesDetAtSkrive = false;
             do{
               #if SHOULD_WIPE_WHOLE_CHIP == 0
-                blockErase(adressenViHusker);  
+                blockErase(tempAdresse);  
               #endif
-              lykkesDetAtSkrive = pageProgram(adressenViHusker, antal256bytes, sampleNr);  // Page program først!
+              lykkesDetAtSkrive = pageProgram(tempAdresse, antal256bytes, sampleNr);  // Page program først!
             } while(!lykkesDetAtSkrive);
-            adressenViHusker += 0x000100;
+            tempAdresse += 0x000100;
           }
           break;
 
         case 1:
+          tempAdresse = SNARE_ADRESS;
+          for(int antal256bytes = 0; antal256bytes < tempVal; antal256bytes++){
+            boolean lykkesDetAtSkrive = false;
+            do{
+              #if SHOULD_WIPE_WHOLE_CHIP == 0
+                blockErase(tempAdresse);  
+              #endif
+              lykkesDetAtSkrive = pageProgram(tempAdresse, antal256bytes, sampleNr);  // Page program først!
+            } while(!lykkesDetAtSkrive);
+            tempAdresse += 0x000100;
+          }
+          break;
+
+        case 2:
+          tempAdresse = HAT_ADRESS;
+          for(int antal256bytes = 0; antal256bytes < tempVal; antal256bytes++){
+            boolean lykkesDetAtSkrive = false;
+            do{
+              #if SHOULD_WIPE_WHOLE_CHIP == 0
+                blockErase(tempAdresse);  
+              #endif
+              lykkesDetAtSkrive = pageProgram(tempAdresse, antal256bytes, sampleNr);  // Page program først!
+            } while(!lykkesDetAtSkrive);
+            tempAdresse += 0x000100;
+          }
+          break;
+
+        case 3:
+          tempAdresse = CLAP_ADRESS;
+          for(int antal256bytes = 0; antal256bytes < tempVal; antal256bytes++){
+            boolean lykkesDetAtSkrive = false;
+            do{
+              #if SHOULD_WIPE_WHOLE_CHIP == 0
+                blockErase(tempAdresse);  
+              #endif
+              lykkesDetAtSkrive = pageProgram(tempAdresse, antal256bytes, sampleNr);  // Page program først!
+            } while(!lykkesDetAtSkrive);
+            tempAdresse += 0x000100;
+          }
           break;
       }
-    }
+    }// for 
     
   #elif CHOOSE_PROGRAM_MODE == CP
     contProgram(adressenViHusker);
@@ -4775,7 +4817,7 @@ boolean pageProgram(uint32_t adress, byte numberOfPagesToWrite, int sampleSelect
    *    → at least 1-byte on data on SI
    *  → CS# goes high.  
    */
-    Serial.print("adress:\t"); Serial.print(adress); Serial.print("\tsampleSelection:\t"); Serial.println(sampleSelection);
+    Serial.print("adress:\t"); Serial.print(adress, HEX); Serial.print("\tsampleSelection:\t"); Serial.println(sampleSelection);
     //    De adresse-variabler vi har
     // uint32_t adressenViHusker = START_ADRESS;
       // Serial.print("adress:\t"); Serial.print(adress); Serial.print("\tnumberPage:\t"); Serial.println(numberOfPagesToWrite);
