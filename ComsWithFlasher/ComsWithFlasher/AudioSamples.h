@@ -1,0 +1,1 @@
+const byte stuff[] = {0x00, 0x00};
