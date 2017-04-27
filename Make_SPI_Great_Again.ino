@@ -400,6 +400,7 @@ void setup() {
   
 
   Serial.begin(250000);
+
   // blockErase(adressenViHusker);
   /*
     Serial.print("sizeof(arrayToSaveToFlash):\t"); Serial.println(sizeof(arrayToSaveToFlash));
