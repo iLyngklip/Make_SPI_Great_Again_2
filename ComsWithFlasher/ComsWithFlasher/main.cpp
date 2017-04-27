@@ -11,76 +11,67 @@
 #include <fstream>
 using namespace std;
 
+#define WRITE_PLACE "/Users/iLyngklip/Documents/Arduino/Make_SPI_Great_Again/ComsWithFlasher/ComsWithFlasher/Færdig_arduino_kode/"
+#define READ_PLACE  "/Users/iLyngklip/Documents/Arduino/Make_SPI_Great_Again/ComsWithFlasher/ComsWithFlasher/"
 
-/*
-int main()
-{
-    FILE *file = NULL;
-    //Opening device file
-    
-    int getnum = 0;
-    do{
-        file = fopen("Audiosamples.h", "r");
-    } while (file == NULL);
-    printf("test");
-    while (true)
-    {
-        
-        // file = fopen("/dev/cu.usbmodem1D11111", "w");
-        cout << ">>" << endl;
-        while(getnum == 0){
-            cin >> getnum;
-        }
-        fprintf(file, "%d\n", getnum); //Writing to the file
-        getnum = 0;
-        
- 
-        char temp = 0x00;
-        for(int i = 0; i < 1024; i++){
-            fprintf(file, "%c\n", i);
-            cout << "test";
-            temp = fgetc(file);
-            printf("Temp:%c\n", temp);
-            
-        }
-        fclose(file);
-    }
-    
-}
-*/
+
+
+const int kickSampleLength  = 18941;
+const int snareSampleLength = 13981;
+const int hatSampleLength   = 18941;
+const int clapSampleLength  = 13981;
+
+
+#define NUMBER_OF_SAMPLES   4
+const string sampleNames[] = {
+    "kick.txt",
+    "snare.txt",
+    "hat.txt",
+    "clap.txt"
+};
+
 // /Users/iLyngklip/Documents/Arduino/Make_SPI_Great_Again/ComsWithFlasher/ComsWithFlasher
 
 int main () {
     string tempString;
-    
-    ofstream writeFile ("/Users/iLyngklip/Documents/Arduino/Make_SPI_Great_Again/ComsWithFlasher/ComsWithFlasher/Færdig_arduino_kode/clap.txt");
-    ifstream readFile ("/Users/iLyngklip/Documents/Arduino/Make_SPI_Great_Again/ComsWithFlasher/ComsWithFlasher/clap.txt");
-    if (writeFile.is_open() && readFile.is_open())
-    {
-        /*
-        cout << (char)readFile.get();
-        cout << (char)readFile.get();
-        cout << (char)readFile.get();
-        cout << (char)readFile.get();
-        cout << (char)readFile.get();
-        cout << (char)readFile.get() << "\n";
-        */
-        // print header
-        int length = 0;
+
+    for(int i = 0; i < NUMBER_OF_SAMPLES; i++){
+        string tempFileWriteString = "/Users/iLyngklip/Documents/Arduino/Make_SPI_Great_Again/ComsWithFlasher/ComsWithFlasher/Færdig_arduino_kode/";
+        string tempFileReadString = "/Users/iLyngklip/Documents/Arduino/Make_SPI_Great_Again/ComsWithFlasher/ComsWithFlasher/";
         
-        // Print data
-        while(!readFile.eof()){
-            tempString.erase();
+        tempFileWriteString.append(sampleNames[i]);
+        tempFileReadString.append(sampleNames[i]);
+        
+        ofstream writeFile (tempFileWriteString);
+        ifstream readFile (tempFileReadString);
+        
+        if (writeFile.is_open() && readFile.is_open())
+        {
+            readFile.seekg(48*2);
+            /*
+            cout << (char)readFile.get();
+            cout << (char)readFile.get();
+            cout << (char)readFile.get();
+            cout << (char)readFile.get();
+            cout << (char)readFile.get();
+            cout << (char)readFile.get() << "\n";
+            */
+            // print header
+            int length = 0;
             
-            
-            for(int k = 0; k < 16; k++){
+            // Print data
+            while(!readFile.eof()){
+                tempString.erase();
+                
                 tempString.append(("0x"));
                 char tempChar;
                 char tempChar2;
                 do{
                     tempChar = (char)readFile.get();
                 } while ((tempChar <= '0' && tempChar >= '9' && tempChar <= 'a' && tempChar >= 'z') || tempChar == 10 || tempChar == 13);
-                
+                if(readFile.eof()){
+                    break;
+                }
                 
                 do{
                     tempChar2 = (char)readFile.get();
@@ -90,27 +81,37 @@ int main () {
                 tempString.push_back((char)tempChar);
                 tempString.append(", ");
                 length++;
+                
+                if(length % 16 == 0){
+                    tempString.append("\n");
+                }
+                
+                if(!readFile.eof()){
+                    writeFile << tempString;
+                }
+                
             }
-            tempString.append("\n");
+            /*
+                tempString += (char)readFile.get();
+                tempString += (char)readFile.get();
+                tempString += (char)readFile.get();
+                tempString += (char)readFile.get();
+                tempString += (char)readFile.get();
+                tempString += (char)readFile.get();
+            */
+            // cout << tempString;
+            
+            // writeFile << tempString;
+            // writeFile << "This is another line.\n";
+            tempString.erase();
+            tempString.append("\nLength:\t"); tempString.append(to_string(length));
             writeFile << tempString;
+            cout << "Length:\t" << length << "\n";
+            writeFile.close();
+            readFile.close();
             
         }
-        /*
-        tempString += (char)readFile.get();
-        tempString += (char)readFile.get();
-        tempString += (char)readFile.get();
-        tempString += (char)readFile.get();
-        tempString += (char)readFile.get();
-        tempString += (char)readFile.get();
-        */
-        // cout << tempString;
-        
-        // writeFile << tempString;
-        // writeFile << "This is another line.\n";
-        writeFile.close();
-        readFile.close();
-        cout << "Length:\t" << length;
+        else cout << "Unable to open file";
     }
-    else cout << "Unable to open file";
     return 0;
 }
