@@ -61,10 +61,10 @@
 
 //    0: Disable
 //    1: Enable
-#define DEBUG_BLOCK_ERASE 1
+#define DEBUG_BLOCK_ERASE 0
 #define DEBUG_WHILE_LOOPS 0
 #define DEBUG_WRONG_DATA  0 
-#define PRINT_WHERE_WE_ARE_READING  1
+#define PRINT_WHERE_WE_ARE_READING  0
 #define PRINT_WHERE_WE_ARE_WRITING  0 
 #define PRINT_THE_READ_DATA         0
 
@@ -772,16 +772,16 @@ void readTwoBytes(uint32_t adress, uint8_t numberOfPagesToRead, byte sampleNr){
   
   // Step 4 
   int reading = 1;
-  for(int i = 0; i < (0xFF + (numberOfPagesToRead * 0xFF)+ 1); i++){
+  for(int i = 0; i < (0xFF + (numberOfPagesToRead * 0xFF)); i++){
     if(i % 0xFF == 0 && i != 0){
       readOneByteSPI();
     }
     storeReadData[sampleNr][i] = readOneByteSPI();
     // delayMicroseconds(0);
-    Serial.print("i:\t"); Serial.print(i); Serial.print("\t"); Serial.print(storeReadData[sampleNr][i], HEX); Serial.print("\t"); Serial.println(arrayToSaveToFlash[sampleNr][i],HEX);
+    // Serial.print("i:\t"); Serial.print(i); Serial.print("\t"); Serial.print(storeReadData[sampleNr][i], HEX); Serial.print("\t"); Serial.println(arrayToSaveToFlash[sampleNr][i],HEX);
     reading++;
   }
-  Serial.print("reading:\t"); Serial.println(reading);
+  // Serial.print("reading:\t"); Serial.println(reading);
   
   // Step 5
   highSS();  
