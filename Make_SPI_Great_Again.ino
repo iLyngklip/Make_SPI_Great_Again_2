@@ -51,18 +51,22 @@
   // Adressen hvortil der skrives. 0x0 for at deaktivere
   #define STOP_ADRESS       0x000000
 
-#define SHOULD_WIPE_WHOLE_CHIP 0
-#define SHOULD_BLOCK_ERASE     0
+
   // 0: Disable 
   // 1: Enable
+#define SHOULD_WIPE_WHOLE_CHIP        1
+#define SHOULD_BLOCK_ERASE            0
+#define SHOULD_LOCK_AFTER_PROGRAMMING 0
 
 
 //    0: Disable
 //    1: Enable
+#define DEBUG_BLOCK_ERASE 1
 #define DEBUG_WHILE_LOOPS 0
 #define DEBUG_WRONG_DATA  0 
-#define PRINT_WHERE_WE_ARE_READING 0
-#define PRINT_WHERE_WE_ARE_WRITING 0 
+#define PRINT_WHERE_WE_ARE_READING  1
+#define PRINT_WHERE_WE_ARE_WRITING  0 
+#define PRINT_THE_READ_DATA         0
 
 
  
@@ -357,7 +361,7 @@ const uint32_t startAdressen = START_ADRESS;
 
 
 
-byte storeReadData[13998] = {0x00, 0x00}; // Her gemmer vi de to byte vi læser
+byte storeReadData[4][13998]; // Her gemmer vi de to byte vi læser
 byte storeRDSR  = 0x00;                // RDSR gemmes her. Omskriv til lokal variabel
 byte RDSCUR     = 0x00;                   // RDSCUR gemmes her. Omskriv til lokal variabel
 
@@ -475,7 +479,9 @@ void setup() {
             
             do{
               #if SHOULD_WIPE_WHOLE_CHIP == 0
-                blockErase(tempAdresse);  
+                #if SHOULD_BLOCK_ERASE == 1
+                  blockErase(tempAdresse);  
+                #endif
               #endif
               lykkesDetAtSkrive = pageProgram(tempAdresse, antal256bytes, sampleNr, 0xFF);  // Page program først!
             } while(!lykkesDetAtSkrive);
@@ -485,7 +491,9 @@ void setup() {
           do{
             
             #if SHOULD_WIPE_WHOLE_CHIP == 0
-              blockErase(tempAdresse);  
+              #if SHOULD_BLOCK_ERASE == 1
+                  blockErase(tempAdresse);  
+                #endif 
             #endif
             lykkesDetAtSkrive = pageProgram(tempAdresse, tempVal, sampleNr, (arrayLengths[sampleNr] % 0xFF));  // Page program først!
           } while(!lykkesDetAtSkrive);
@@ -499,7 +507,9 @@ void setup() {
           for(int antal256bytes = 0; antal256bytes < tempVal; antal256bytes++){
             do{
               #if SHOULD_WIPE_WHOLE_CHIP == 0
-                blockErase(tempAdresse);  
+                #if SHOULD_BLOCK_ERASE == 1
+                  blockErase(tempAdresse);  
+                #endif  
               #endif
               lykkesDetAtSkrive = pageProgram(tempAdresse, antal256bytes, sampleNr, 0xFF);  // Page program først!
             } while(!lykkesDetAtSkrive);
@@ -508,7 +518,9 @@ void setup() {
           lykkesDetAtSkrive = false;
           do{
             #if SHOULD_WIPE_WHOLE_CHIP == 0
-              blockErase(tempAdresse);  
+              #if SHOULD_BLOCK_ERASE == 1
+                  blockErase(tempAdresse);  
+                #endif 
             #endif
             lykkesDetAtSkrive = pageProgram(tempAdresse, tempVal, sampleNr, (arrayLengths[sampleNr] % 0xFF));  // Page program først!
           }while(!lykkesDetAtSkrive);
@@ -522,7 +534,9 @@ void setup() {
           for(int antal256bytes = 0; antal256bytes < tempVal; antal256bytes++){
             do{
               #if SHOULD_WIPE_WHOLE_CHIP == 0
-                blockErase(tempAdresse);  
+                #if SHOULD_BLOCK_ERASE == 1
+                  blockErase(tempAdresse);  
+                #endif 
               #endif
               lykkesDetAtSkrive = pageProgram(tempAdresse, antal256bytes, sampleNr, 0xFF);  // Page program først!
             } while(!lykkesDetAtSkrive);
@@ -531,7 +545,9 @@ void setup() {
           lykkesDetAtSkrive = false;
           do{
             #if SHOULD_WIPE_WHOLE_CHIP == 0
-              blockErase(tempAdresse);  
+              #if SHOULD_BLOCK_ERASE == 1
+                  blockErase(tempAdresse);  
+                #endif 
             #endif
             lykkesDetAtSkrive = pageProgram(tempAdresse, tempVal, sampleNr, (arrayLengths[sampleNr] % 0xFF));  // Page program først!
           }while(!lykkesDetAtSkrive);
@@ -546,7 +562,9 @@ void setup() {
             
             do{
               #if SHOULD_WIPE_WHOLE_CHIP == 0
-                blockErase(tempAdresse);  
+                #if SHOULD_BLOCK_ERASE == 1
+                  blockErase(tempAdresse);  
+                #endif
               #endif
               lykkesDetAtSkrive = pageProgram(tempAdresse, antal256bytes, sampleNr, 0xFF);  // Page program først!
             } while(!lykkesDetAtSkrive);
@@ -556,7 +574,9 @@ void setup() {
           do{
             
             #if SHOULD_WIPE_WHOLE_CHIP == 0
-              blockErase(tempAdresse);  
+              #if SHOULD_BLOCK_ERASE == 1
+                  blockErase(tempAdresse);  
+                #endif
             #endif
             lykkesDetAtSkrive = pageProgram(tempAdresse, tempVal, sampleNr, (arrayLengths[sampleNr] % 0xFF));  // Page program først!
           }while(!lykkesDetAtSkrive);
@@ -588,24 +608,23 @@ void setup() {
     
     for(int sampleNr = 0; sampleNr < NUMBER_OF_SAMPLES; sampleNr++){
       tempVal = (arrayLengths[sampleNr] - (arrayLengths[sampleNr] % 0xFF)) / 0xFF;
-      uint32_t tempAdresse = 0;  
       
       switch(sampleNr){
         
         case 0:
-          readTwoBytes(KICK_ADRESS, tempVal); 
+          readTwoBytes(KICK_ADRESS, tempVal, sampleNr); 
           break;
 
         case 1:
-            readTwoBytes(SNARE_ADRESS, tempVal); 
+            readTwoBytes(SNARE_ADRESS, tempVal, sampleNr); 
           break;
 
         case 2:
-            readTwoBytes(HAT_ADRESS, tempVal); 
+            readTwoBytes(HAT_ADRESS, tempVal, sampleNr); 
           break;
 
         case 3:          
-            readTwoBytes(CLAP_ADRESS, tempVal); 
+            readTwoBytes(CLAP_ADRESS, tempVal, sampleNr); 
           break;
         
      // }
@@ -631,7 +650,8 @@ void setup() {
  *##########################################
  *##########################################
  */
- Serial.println("Verificerer");
+  Serial.println("Verificerer");
+
   for(int i = 0; i < NUMBER_OF_SAMPLES; i++){
     if(compareData(i)){
       Serial.print("\tFEJL i samlple:\t"); Serial.println(i);
@@ -639,15 +659,18 @@ void setup() {
       Serial.print("\tGODT i sample:\t"); Serial.println(i);
     }
   }
-  // printReadData();
+  
+  #if PRINT_THE_READ_DATA == 1
+    printReadData();
+  #endif
  Serial.println("Verificering done");  
  highSS();
 
-
+#if SHOULD_LOCK_AFTER_PROGRAMMING == 1
   Serial.println("Locking the chip");
   lockChip();
   Serial.println("Chip locked");
-  
+#endif
 
 
  
@@ -718,7 +741,7 @@ void loop() {
     |_|     \____/  |_|            |_|       \____/  |_| \_|  \_____| (_)
 #################################################################################################
 */
-void readTwoBytes(uint32_t adress, uint8_t numberOfPagesToRead){
+void readTwoBytes(uint32_t adress, uint8_t numberOfPagesToRead, byte sampleNr){
   /*  Læser lige så mange bytes som der er blevet skrevet fra
    *   arrayToSaveToFlash[] og gemmer dem i storeReadData[]
    *   Disse kan senere sammenlignes med compareData().
@@ -748,10 +771,17 @@ void readTwoBytes(uint32_t adress, uint8_t numberOfPagesToRead){
   // Serial.print("Læser til:\t"); Serial.println(0xFF + (numberOfPagesToRead * 0xFF));
   
   // Step 4 
-  for(int i = 0; i < (0xFF + (numberOfPagesToRead * 0xFF)); i++){
-    storeReadData[i] = readOneByteSPI();
-    // Serial.print("i:\t"); Serial.print(i); Serial.print("\t"); Serial.print(storeReadData[i]); Serial.print("\t"); Serial.println(arrayToSaveToFlash[3][i]);
+  int reading = 1;
+  for(int i = 0; i < (0xFF + (numberOfPagesToRead * 0xFF)+ 1); i++){
+    if(i % 0xFF == 0 && i != 0){
+      readOneByteSPI();
+    }
+    storeReadData[sampleNr][i] = readOneByteSPI();
+    // delayMicroseconds(0);
+    Serial.print("i:\t"); Serial.print(i); Serial.print("\t"); Serial.print(storeReadData[sampleNr][i], HEX); Serial.print("\t"); Serial.println(arrayToSaveToFlash[sampleNr][i],HEX);
+    reading++;
   }
+  Serial.print("reading:\t"); Serial.println(reading);
   
   // Step 5
   highSS();  
@@ -804,7 +834,7 @@ boolean pageProgram(uint32_t adress, byte numberOfPagesToWrite, int sampleSelect
 
   
     // Sender data afsted
-    for(int i = 0; i < numberOfBytes; i++){
+    for(int i = 0; i <= numberOfBytes; i++){
       byte tempByte = arrayToSaveToFlash[sampleSelection][(i + (numberOfPagesToWrite * 0xFF))];
       transmitOneByteSPI(tempByte);
       // Serial.print("Skriver:\t"); Serial.println(arrayToSaveToFlash[i], HEX);
@@ -1274,8 +1304,8 @@ void blockErase(uint32_t adress){
    *  Er blokken låst (BP0-BP3 = 1, eller WPSEL = 1) sker der ingen ting
    *  
    */
-  #if DEBUG_WHILE_LOOPS == 1
-   Serial.println("blockErase\n");
+  #if DEBUG_BLOCK_ERASE == 1
+   Serial.print("blockErase: adress:\t"); Serial.println(adress, HEX);
   #endif
   lowSS();
   writeEnable();
@@ -1542,13 +1572,14 @@ void printReadData(){
    */
   
   Serial.println();  
-  for(int i = 0; i < (SAMPLE_LENGTH); i+=2){
-    Serial.print("SRD["); Serial.print(i); Serial.print("]:\t"); Serial.print(storeReadData[i], HEX); Serial.print("\t");
-    Serial.print("SRD["); Serial.print(i+1); Serial.print("]:\t"); Serial.print(storeReadData[i+1], HEX); Serial.print("\t");
-    if(i % 4 == 0){
-      Serial.println();
+  for(int sampleNr = 0; sampleNr < NUMBER_OF_SAMPLES; sampleNr++){
+    for(int i = 0; i < (SAMPLE_LENGTH); i+=2){
+      Serial.print("SRD["); Serial.print(i); Serial.print("]:\t"); Serial.print(storeReadData[sampleNr][i], HEX); Serial.print("\t");
+      Serial.print("SRD["); Serial.print(i+1); Serial.print("]:\t"); Serial.print(storeReadData[sampleNr][i+1], HEX); Serial.print("\t");
+      if(i % 4 == 0){
+        Serial.println();
+      }
     }
-  
   }
   
 }
@@ -1563,14 +1594,17 @@ bool compareData(int sampleNr){
    */
 
   bool mistake = false;
+
   for(int i = 0; i < arrayLengths[sampleNr]; i++){  
-    if(storeReadData[i] != arrayToSaveToFlash[sampleNr][i]){
+    if(storeReadData[sampleNr][i] != arrayToSaveToFlash[sampleNr][i]){
       #if DEBUG_WRONG_DATA  ==  1
-        Serial.print("storeReadData["); Serial.print(i); Serial.print("] IKKE ENS\n");
+        Serial.print("SRD[");Serial.print(sampleNr); Serial.print("]["); Serial.print(i); Serial.print("]\t"); Serial.print(storeReadData[sampleNr][i], HEX); Serial.print("\t!=\t");
+        Serial.print(arrayToSaveToFlash[sampleNr][i], HEX); Serial.print("\n");
       #endif
       mistake = true;
     }
   }
+  
   #if DEBUG_WRONG_DATA == 1
     Serial.print("CD returning:\t"); Serial.println(mistake);
   #endif
