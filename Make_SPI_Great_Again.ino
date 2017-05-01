@@ -39,14 +39,15 @@
    */
 
 // Hvis CHOOSE_PROGRAM_MODE == PP gælder STOP_ADRESS:
-  // Block-skifte ligger ved 0x010000, 0x020000 osv.
+  // Block32-skifte ligger ved 0x010000, 0x020000 osv.
+  // Block-skifte ligger ved 0x100000, 0x200000 osv.
   // Adressen hvorfra der startes med at skrive 
   #define START_ADRESS      0x003000
 
-    #define KICK_ADRESS     0x010000
-    #define SNARE_ADRESS    0x020000
-    #define HAT_ADRESS      0x030000
-    #define CLAP_ADRESS     0x040000
+    #define KICK_ADRESS     0x110000
+    #define SNARE_ADRESS    0x120000
+    #define HAT_ADRESS      0x130000
+    #define CLAP_ADRESS     0x140000
   
   // Adressen hvortil der skrives. 0x0 for at deaktivere
   #define STOP_ADRESS       0x000000
@@ -54,8 +55,8 @@
 
   // 0: Disable 
   // 1: Enable
-#define SHOULD_WIPE_WHOLE_CHIP        1
-#define SHOULD_BLOCK_ERASE            0
+#define SHOULD_WIPE_WHOLE_CHIP        0
+#define SHOULD_BLOCK_ERASE            1
 #define SHOULD_LOCK_AFTER_PROGRAMMING 0
 
 
@@ -67,6 +68,7 @@
 #define PRINT_WHERE_WE_ARE_READING  0
 #define PRINT_WHERE_WE_ARE_WRITING  0 
 #define PRINT_THE_READ_DATA         0
+#define FIND_STUFF_INSTEAD          0
 
 
  
@@ -81,13 +83,14 @@
 #################################################################################################
 */   
 /*  PINOUT
- * ------------------------------------------
- * |     Arduino  T Port      T  Papilio    |
- * |  Clock:   13 | B00100000 |  13         |
- * |  MISO:    12 | B00010000 |  12         |
- * |  MOSI:    11 | B00001000 |  11         |
- * |  SS:      10 | B00000100 |  09         |
- * ------------------------------------------
+ *   
+ * ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+ * ⎟    Arduino   ⏉ Port      ⏉  Papilio    ⏋
+ * ⎟  Clock:   13 ⎟ B00100000 ⎟  13         ⎟
+ * ⎟  MISO:    12 ⎟ B00010000 ⎟  12         ⎟
+ * ⎟  MOSI:    11 ⎟ B00001000 ⎟  11         ⎟
+ * ⎟  SS:      10 ⎟ B00000100 ⎟  09         ⏌
+ * ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
  */
   
  
@@ -413,6 +416,85 @@ void setup() {
     Serial.print("sizeof(hatSample):\t"); Serial.println(sizeof(hatSample));
     Serial.print("sizeof(clapSample):\t"); Serial.println(sizeof(clapSample));
   */
+  #if FIND_STUFF_INSTEAD == 1
+    Serial.println("Hello");
+    
+    // byte arrayToFind[]    = {0x09, 0x0F, 0xF0, 0x0F, 0xF0, 0x0F, 0xF0};
+    // byte arrayToFind[]    = {0x16, 0x56, 0x77, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x30, 0xA1, 0x00, 0x0A, 0x30, 0xA1, 0x00, 0x03, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x30, 0xA1, 0x00, 0x0A, 0x30, 0xA1, 0x00, 0x05, 0x30, 0xE1, 0x00, 0xFF, 0x30, 0xC1, 0x00, 0x81, 0x30, 0x02, 0x00, 0x1A, 0x47, 0x1E, 0x30, 0xA1, 0x00, 0x0D, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00, 0x20, 0x00};
+    byte arrayToFind[] = {0x7C, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xAA, 0x99, 0x55, 0x66, 0x30};
+    byte arrayToCompare[sizeof(arrayToFind)];
+    
+    byte tempByteForReading = 0xFF;
+    uint32_t adressWeAreLookingFor = 0x00000000;
+  
+    bool haveWeFoundIt = false;
+    int offsetAdress = 340695;
+    
+    lowSS();
+  
+    // Step 2
+    sendReadInstruction();
+    
+    // Step 3
+    sendAdress(adressWeAreLookingFor);
+    do{
+       
+      
+      do{
+        tempByteForReading = readOneByteSPI();
+        adressWeAreLookingFor++;
+        Serial.println(adressWeAreLookingFor, HEX);
+      } while(tempByteForReading != arrayToFind[0]);
+  
+      Serial.print("Found:\t"); Serial.println(tempByteForReading, HEX);
+      
+      arrayToCompare[0] = tempByteForReading;
+      
+      // Load data into the compare-array
+      for(int i = 1; i < sizeof(arrayToFind); i++){
+        arrayToCompare[i] = readOneByteSPI();
+        adressWeAreLookingFor++;
+        
+        Serial.print("Found:\t"); Serial.println(arrayToCompare[i], HEX);
+        if(arrayToFind[i] == arrayToCompare[i]){
+          if(i == sizeof(arrayToFind) && haveWeFoundIt == true){
+            Serial.println("Returning");
+            return;
+          }
+          haveWeFoundIt = true;
+          Serial.print("Found something @:\t"); Serial.print(adressWeAreLookingFor + i, HEX); Serial.print("\t"); Serial.println(haveWeFoundIt);
+        } else {
+          Serial.print("Lost it \t @:\t"); Serial.print(adressWeAreLookingFor + i, HEX); Serial.print("\t"); Serial.println(haveWeFoundIt);
+          haveWeFoundIt = false;
+          
+        }
+        
+      }
+      
+    Serial.print("ad:\t"); Serial.println(adressWeAreLookingFor);  
+    } while (!haveWeFoundIt && adressWeAreLookingFor < 0xFFFFFF + 1);
+    
+    highSS();  
+  
+    Serial.println("FOUND IT FAGGOTS!");
+    Serial.print("AWALF:\t"); Serial.print(adressWeAreLookingFor, HEX); Serial.print("\t");Serial.print("Start adressen er:\t"); Serial.println(adressWeAreLookingFor - offsetAdress,HEX);
+    while(1);
+  #endif
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   #if SHOULD_WIPE_WHOLE_CHIP == 1
     Serial.println("Full chip erase: ON");
     chipErase();
@@ -473,28 +555,31 @@ void setup() {
         
         
         case 0:
+          Serial.println("\t[                ]");
           // KICK sample
           tempAdresse = KICK_ADRESS;
-          for(int antal256bytes = 0; antal256bytes < tempVal; antal256bytes++){
-            
+          #if SHOULD_WIPE_WHOLE_CHIP == 0
+            #if SHOULD_BLOCK_ERASE == 1
+              block32Erase(tempAdresse);  
+            #endif
+          #endif
+          
+          for(int antal256bytes = 0; antal256bytes < tempVal; antal256bytes++){      
             do{
-              #if SHOULD_WIPE_WHOLE_CHIP == 0
-                #if SHOULD_BLOCK_ERASE == 1
-                  blockErase(tempAdresse);  
-                #endif
-              #endif
+              
               lykkesDetAtSkrive = pageProgram(tempAdresse, antal256bytes, sampleNr, 0xFF);  // Page program først!
             } while(!lykkesDetAtSkrive);
             tempAdresse += 0x000100;
           }
           lykkesDetAtSkrive = false;
           do{
-            
+            /*
             #if SHOULD_WIPE_WHOLE_CHIP == 0
               #if SHOULD_BLOCK_ERASE == 1
-                  blockErase(tempAdresse);  
+                  block32Erase(tempAdresse);  
                 #endif 
             #endif
+            */
             lykkesDetAtSkrive = pageProgram(tempAdresse, tempVal, sampleNr, (arrayLengths[sampleNr] % 0xFF));  // Page program først!
           } while(!lykkesDetAtSkrive);
           
@@ -503,25 +588,29 @@ void setup() {
 
 
         case 1:
+          Serial.println("\t[====            ]");
           tempAdresse = SNARE_ADRESS;
+          #if SHOULD_WIPE_WHOLE_CHIP == 0
+            #if SHOULD_BLOCK_ERASE == 1
+              block32Erase(tempAdresse);  
+            #endif  
+          #endif
           for(int antal256bytes = 0; antal256bytes < tempVal; antal256bytes++){
             do{
-              #if SHOULD_WIPE_WHOLE_CHIP == 0
-                #if SHOULD_BLOCK_ERASE == 1
-                  blockErase(tempAdresse);  
-                #endif  
-              #endif
+              
               lykkesDetAtSkrive = pageProgram(tempAdresse, antal256bytes, sampleNr, 0xFF);  // Page program først!
             } while(!lykkesDetAtSkrive);
             tempAdresse += 0x000100;
           }
           lykkesDetAtSkrive = false;
           do{
+            /*
             #if SHOULD_WIPE_WHOLE_CHIP == 0
               #if SHOULD_BLOCK_ERASE == 1
-                  blockErase(tempAdresse);  
+                  block32Erase(tempAdresse);  
                 #endif 
             #endif
+            */
             lykkesDetAtSkrive = pageProgram(tempAdresse, tempVal, sampleNr, (arrayLengths[sampleNr] % 0xFF));  // Page program først!
           }while(!lykkesDetAtSkrive);
           
@@ -530,25 +619,29 @@ void setup() {
 
 
         case 2:
+          Serial.println("\t[========        ]");
           tempAdresse = HAT_ADRESS;
+          #if SHOULD_WIPE_WHOLE_CHIP == 0
+            #if SHOULD_BLOCK_ERASE == 1
+              block32Erase(tempAdresse);  
+            #endif 
+          #endif
           for(int antal256bytes = 0; antal256bytes < tempVal; antal256bytes++){
             do{
-              #if SHOULD_WIPE_WHOLE_CHIP == 0
-                #if SHOULD_BLOCK_ERASE == 1
-                  blockErase(tempAdresse);  
-                #endif 
-              #endif
+              
               lykkesDetAtSkrive = pageProgram(tempAdresse, antal256bytes, sampleNr, 0xFF);  // Page program først!
             } while(!lykkesDetAtSkrive);
             tempAdresse += 0x000100;
           }
           lykkesDetAtSkrive = false;
           do{
+            /*
             #if SHOULD_WIPE_WHOLE_CHIP == 0
               #if SHOULD_BLOCK_ERASE == 1
-                  blockErase(tempAdresse);  
+                  block32Erase(tempAdresse);  
                 #endif 
             #endif
+            */
             lykkesDetAtSkrive = pageProgram(tempAdresse, tempVal, sampleNr, (arrayLengths[sampleNr] % 0xFF));  // Page program først!
           }while(!lykkesDetAtSkrive);
           
@@ -557,27 +650,29 @@ void setup() {
 
 
         case 3:
+          Serial.println("\t[============    ]");
           tempAdresse = CLAP_ADRESS;
+          #if SHOULD_WIPE_WHOLE_CHIP == 0
+            #if SHOULD_BLOCK_ERASE == 1
+              block32Erase(tempAdresse);  
+            #endif
+          #endif
+          
           for(int antal256bytes = 0; antal256bytes < tempVal; antal256bytes++){
-            
             do{
-              #if SHOULD_WIPE_WHOLE_CHIP == 0
-                #if SHOULD_BLOCK_ERASE == 1
-                  blockErase(tempAdresse);  
-                #endif
-              #endif
               lykkesDetAtSkrive = pageProgram(tempAdresse, antal256bytes, sampleNr, 0xFF);  // Page program først!
             } while(!lykkesDetAtSkrive);
             tempAdresse += 0x000100;
           }
           lykkesDetAtSkrive = false;
           do{
-            
+            /*
             #if SHOULD_WIPE_WHOLE_CHIP == 0
               #if SHOULD_BLOCK_ERASE == 1
-                  blockErase(tempAdresse);  
+                  block32Erase(tempAdresse);  
                 #endif
             #endif
+            */
             lykkesDetAtSkrive = pageProgram(tempAdresse, tempVal, sampleNr, (arrayLengths[sampleNr] % 0xFF));  // Page program først!
           }while(!lykkesDetAtSkrive);
           break;
@@ -585,7 +680,7 @@ void setup() {
 
       
     }// for 
-    
+    Serial.println("\t[================]");
   #elif CHOOSE_PROGRAM_MODE == CP
     contProgram(adressenViHusker);
     
@@ -872,7 +967,7 @@ boolean pageProgram(uint32_t adress, byte numberOfPagesToWrite, int sampleSelect
       return true;
     }
     
-    /*
+    /* 
      * Mon der burde låses igen? hmm
      */
 }
@@ -1308,9 +1403,39 @@ void blockErase(uint32_t adress){
    Serial.print("blockErase: adress:\t"); Serial.println(adress, HEX);
   #endif
   lowSS();
-  writeEnable();
+  writeEnable(); waitUntilWEL();
   lowSS();
   transmitOneByteSPI(0xD8);
+  sendAdress(adress);
+  highSS();
+  
+  waitUntilWorkIsDone();
+}
+
+void block32Erase(uint32_t adress){
+  /*
+   * Sletter en hel block (64k-byte)
+   *  Er blokken låst (BP0-BP3 = 1, eller WPSEL = 1) sker der ingen ting
+   *  
+   */
+  #if DEBUG_BLOCK_ERASE == 1
+   Serial.print("blockErase: adress:\t"); Serial.println(adress, HEX);
+  #endif
+  lowSS();
+  writeEnable();
+  lowSS();
+  transmitOneByteSPI(0x52);
+  sendAdress(adress);
+  highSS();
+  
+  waitUntilWorkIsDone();
+}
+
+void sectorErase(uint32_t adress){
+  lowSS();
+  writeEnable(); waitUntilWEL();
+  lowSS();
+  transmitOneByteSPI(0x20);
   sendAdress(adress);
   highSS();
   
