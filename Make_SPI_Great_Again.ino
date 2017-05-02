@@ -66,6 +66,19 @@
 #define SHOULD_BLOCK_ERASE            1
 #define SHOULD_LOCK_AFTER_PROGRAMMING 0
 
+#define AREA_TO_LOCK                  B00011000
+  /*  Tabel over områder der låses med AREA_TO_LOCK
+   * BP3  BP2 BP1 BP0 64Mb  Area                            Binær kode
+   *  0    0   0   0   0    (none)                          B00000000
+   *  0    0   0   1   1    (2 blocks, block 126th-127th)   B00000100
+   *  0    0   1   0   2    (4 blocks, block 124th-127th)   B00001000
+   *  0    0   1   1   3    (8 blocks, block 120th-127th)   B00001100
+   *  0    1   0   0   4    (16 blocks, block 112nd-127th)  B00010000
+   *  0    1   0   1   5    (32 blocks, block 96th-127th)   B00010100
+   *  0    1   1   0   6    (64 blocks, block 64th-127th)   B00011000       <- Den bruger vi
+   *  1    1   1   1   15   (All)                           B00111100
+   */
+
 
 //    0: Disable
 //    1: Enable
@@ -173,6 +186,9 @@ boolean WPSEL   = true;
 #################################################################################################
 */
 void setup() {
+
+  
+  
   #if defined(ARDUINO_AVR_UNO)
     DDRB = DDRB|B00101111; // Set input/output pinmodes
   
@@ -186,7 +202,7 @@ void setup() {
   
 
   Serial.begin(250000);
-
+  printMainMenu();
   #if FIND_STUFF_INSTEAD == 1
     Serial.println("Hello");
     
@@ -256,8 +272,16 @@ void setup() {
   // Overstående er hvis vi leder efter ting i stedet. Bruges nok ikke mere...
   
   
+
+
+
+
   
-  
+  /*
+   * 
+   * HERFRA PROGRAMMERES DER! 
+   * 
+   */
   
   
   
@@ -288,7 +312,7 @@ void setup() {
   
   Serial.print("Unlocking chip:\t");
   unlockChip();
-  Serial.println("Done");
+  Serial.println("DONE");
 
 
 
@@ -450,7 +474,7 @@ for(int sampleNr = 0; sampleNr < NUMBER_OF_SAMPLES; sampleNr++){
 Serial.println("\t[================]");
 
   
-  Serial.println("Programmering done");
+  Serial.println("Programmering done\n");
   adressenViHusker = START_ADRESS;
   highSS();
 
@@ -462,7 +486,7 @@ Serial.println("\t[================]");
  *##########################################
  *##########################################
  */
-  Serial.print("Reading:\t");
+  Serial.print("Reading\n");
    
     for(int sampleNr = 0; sampleNr < NUMBER_OF_SAMPLES; sampleNr++){
       // Udregner antallet af HELE pages (256 byte)
@@ -471,25 +495,30 @@ Serial.println("\t[================]");
       switch(sampleNr){
         
         case 0:
-          readTwoBytes(KICK_ADRESS, tempVal, sampleNr); 
+            Serial.println("\t[                ]");
+            readTwoBytes(KICK_ADRESS, tempVal, sampleNr); 
           break;
 
         case 1:
+            Serial.println("\t[====            ]");
             readTwoBytes(SNARE_ADRESS, tempVal, sampleNr); 
           break;
 
         case 2:
+            Serial.println("\t[========        ]");
             readTwoBytes(HAT_ADRESS, tempVal, sampleNr); 
           break;
 
         case 3:          
-            readTwoBytes(CLAP_ADRESS, tempVal, sampleNr); 
+            Serial.println("\t[============    ]");
+            readTwoBytes(CLAP_ADRESS, tempVal, sampleNr);
           break;
       }// Switch
       
     }// for
-    
-  Serial.println("done");
+  Serial.print("\t[================]\t");  
+  delay(100);
+  Serial.println("Done\n");
   highSS();
 
 
@@ -520,7 +549,7 @@ Serial.println("\t[================]");
   #endif
 
   
- Serial.println("Verificering done");  
+ Serial.println("Verificering done\n");  
  highSS();
 
 
@@ -528,14 +557,14 @@ Serial.println("\t[================]");
 
 // Hvis den skal låse chippen bagefter den har skrevet til den
 #if SHOULD_LOCK_AFTER_PROGRAMMING == 1
-  Serial.println("Locking the chip");
+  Serial.print("Locking the chip:\t");
   lockChip();
-  Serial.println("Chip locked");
+  Serial.println("DONE\n");
 #endif
 
 
  
- Serial.println("---Process done--------------");
+ Serial.println("--- Process done --------------");
 }
 
 /*
@@ -548,9 +577,366 @@ Serial.println("\t[================]");
      \/      \____/  |_____| |_____/        |______|  \____/   \____/  |_|      
 #################################################################################################
 */
-void loop() {
+void loop(){
+  /*
+   *  Serial.println("\t MAIN MENU");
+   *  Serial.println("Command\tAction");
+   *  Serial.println("---------------------------");
+   *  Serial.println(" A\tAuto");
+   *  Serial.println(" R\tRead");
+   *  Serial.println(" V\tVerify");
+   *  Serial.println(" P\tProgram");
+   *  Serial.println(" D\tErase specific area");
+   *  Serial.println(" E\tErase whole chip");
+   *  Serial.println("---------------------------\n\n");
+   */
+  
   // Loopet er overflødigt
+  if(Serial.available() == 1){   // check for serial data
+    switch(Serial.read()){       // see which command we received
+    
+    case 'A': // AUTO
+      eraseAllRoutine();
+      headerRoutine();
+      unlockRoutine();
+      programRoutine();
+      readRoutine();
+      verifyRoutine();
+      lockRoutine();
+      
+      Serial.println("--- Process done --------------");
+      break;  
+
+    case 'R': // READ
+      headerRoutine();
+      readRoutine();
+      Serial.println("--- Process done --------------");
+      break;  
+
+    case 'V': // Verify
+      headerRoutine();
+      verifyRoutine();
+      Serial.println("--- Process done --------------");
+      break;  
+    
+    case 'P':// Program
+      headerRoutine();
+      programRoutine();
+      Serial.println("--- Process done --------------");
+      break;
+
+    case 'D':// Specific erase
+      
+      Serial.println("--- Process done --------------");
+      break;
+
+    case 'E':// Erase all
+      
+      Serial.println("--- Process done --------------");
+      break;
+    default:
+      Serial.println("Wrong input.");
+      break;
+    }// Switch
+  } else {    // seems like this is not necessary, but what the hey, leave it in for kicks
+    if(Serial.available() > 1) // if we received too many bytes then clear the buffer
+      Serial.flush();          // Arduino web site unclear on this command's current function, used to clear the buffer
+   }// else
+
+}// loop
+
+
+
+
+
+
+
+/*
+#################################################################################################
+  _______    ____    _____          ______   _    _   _   _    _____     
+ |__   __|  / __ \  |  __ \        |  ____| | |  | | | \ | |  / ____|    
+    | |    | |  | | | |__) |       | |__    | |  | | |  \| | | |         
+    | |    | |  | | |  ___/        |  __|   | |  | | | . ` | | |         
+    | |    | |__| | | |            | |      | |__| | | |\  | | |____   _ 
+    |_|     \____/  |_|            |_|       \____/  |_| \_|  \_____| (_)
+#################################################################################################
+*/
+void eraseAllRoutine(){        
+  #if SHOULD_WIPE_WHOLE_CHIP == 1
+    Serial.println("Full chip erase: ON");
+    chipErase();
+    Serial.println("Full chip erase:  DONE");
+  #elif SHOULD_WIPE_WHOLE_CHIP == 0
+    Serial.println("Full chip erase: OFF");
+
+  #else 
+    #error Fejl i "SHOULD_WIPE_WHOLE_CHIP"
+  #endif
+}  
+  
+void headerRoutine(){  
+  Serial.println("---Korer process om 2 sec.---");
+  delay(2000);
+  Serial.println();  
 }
+
+void unlockRoutine(){
+  Serial.print("Unlocking chip:\t");
+  unlockChip();
+  Serial.println("DONE");
+}
+
+void programRoutine(){
+  
+  /*##########################################
+   *##########################################
+   *  PROGRAMMERER                          ##
+   *##########################################
+   *##########################################
+   */
+   Serial.println("Programmerer");
+  
+  
+  uint16_t tempVal = 0;
+  /*
+  0: #define KICK_ADRESS     0x110000
+  1: #define SNARE_ADRESS    0x120000
+  2: #define HAT_ADRESS      0x130000
+  3: #define CLAP_ADRESS     0x140000
+  */
+  
+  
+  // Her kørers forskellige procedurer alt efter hvilken af de 4 samples
+  // der skal programmeres. 
+  for(int sampleNr = 0; sampleNr < NUMBER_OF_SAMPLES; sampleNr++){
+    // Her udregnes hvor mange HELE pages der er (256 byte)
+    tempVal = (arrayLengths[sampleNr] - (arrayLengths[sampleNr] % 0xFF)) / 0xFF;
+  
+    // En variabel til at gemme hvilken page vi skriver til.
+    uint32_t tempAdresse = 0;
+  
+    // Debugging...
+    #if PRINT_WHERE_WE_ARE_WRITING == 1
+      Serial.print("tempVal:\t"); Serial.println(tempVal);
+    #endif 
+    
+  
+    
+    boolean lykkesDetAtSkrive = false;   
+    switch(sampleNr){
+      
+      
+      case 0:
+        // KICK sample
+  
+        // Loadingbar til brugeren
+        Serial.println("\t[                ]");
+        
+        // Sætter adresse-variablen
+        tempAdresse = KICK_ADRESS;
+  
+        // Tjekker om vi skal slette ne 32kB blok
+        #if SHOULD_WIPE_WHOLE_CHIP == 0
+          #if SHOULD_BLOCK_ERASE == 1
+            block32Erase(tempAdresse);  
+          #endif
+        #endif
+  
+        // Programmerer antallet af HELE pages
+        for(int antal256bytes = 0; antal256bytes < tempVal; antal256bytes++){      
+          
+          // do-while loop til at tjekke om det lykkes at skrive til chippen
+          do{
+            // Her gemmes status på skrive-processen. 
+            lykkesDetAtSkrive = pageProgram(tempAdresse, antal256bytes, sampleNr, 0xFF);
+          } while(!lykkesDetAtSkrive);
+          
+          // Er det lykkedes at skrive, tælles adressen op
+          tempAdresse += 0x000100;
+        }
+  
+        // Vi er nu færdige med at skrive antallet af HELE pages
+        lykkesDetAtSkrive = false;
+        do{
+          // Samme procedure som overstående, bare denne gang er det ikke nødvendigvis en hel page
+          // hvilket ses på den sidste parameter i pageProgram()
+          lykkesDetAtSkrive = pageProgram(tempAdresse, tempVal, sampleNr, (arrayLengths[sampleNr] % 0xFF));
+        } while(!lykkesDetAtSkrive);
+  
+        // Done med programmering af sample 0
+        break;
+  
+  
+  
+      case 1:
+      // For kommentering til casen, se case 0 da det er det samme i alle 4.
+        Serial.println("\t[====            ]");
+        tempAdresse = SNARE_ADRESS;
+        #if SHOULD_WIPE_WHOLE_CHIP == 0
+          #if SHOULD_BLOCK_ERASE == 1
+            block32Erase(tempAdresse);  
+          #endif  
+        #endif
+        for(int antal256bytes = 0; antal256bytes < tempVal; antal256bytes++){
+          do{
+            
+            lykkesDetAtSkrive = pageProgram(tempAdresse, antal256bytes, sampleNr, 0xFF);
+          } while(!lykkesDetAtSkrive);
+          tempAdresse += 0x000100;
+        }
+        lykkesDetAtSkrive = false;
+        do{
+          lykkesDetAtSkrive = pageProgram(tempAdresse, tempVal, sampleNr, (arrayLengths[sampleNr] % 0xFF));
+        }while(!lykkesDetAtSkrive);
+        
+        break;
+  
+  
+  
+      case 2:
+      // For kommentering til casen, se case 0 da det er det samme i alle 4.
+        Serial.println("\t[========        ]");
+        tempAdresse = HAT_ADRESS;
+        #if SHOULD_WIPE_WHOLE_CHIP == 0
+          #if SHOULD_BLOCK_ERASE == 1
+            block32Erase(tempAdresse);  
+          #endif 
+        #endif
+        for(int antal256bytes = 0; antal256bytes < tempVal; antal256bytes++){
+          do{
+            
+            lykkesDetAtSkrive = pageProgram(tempAdresse, antal256bytes, sampleNr, 0xFF);
+          } while(!lykkesDetAtSkrive);
+          tempAdresse += 0x000100;
+        }
+        lykkesDetAtSkrive = false;
+        do{
+          lykkesDetAtSkrive = pageProgram(tempAdresse, tempVal, sampleNr, (arrayLengths[sampleNr] % 0xFF));
+        }while(!lykkesDetAtSkrive);
+        
+        break;
+  
+  
+  
+      case 3:
+      // For kommentering til casen, se case 0 da det er det samme i alle 4.
+        Serial.println("\t[============    ]");
+        tempAdresse = CLAP_ADRESS;
+        #if SHOULD_WIPE_WHOLE_CHIP == 0
+          #if SHOULD_BLOCK_ERASE == 1
+            block32Erase(tempAdresse);  
+          #endif
+        #endif
+        
+        for(int antal256bytes = 0; antal256bytes < tempVal; antal256bytes++){
+          do{
+            lykkesDetAtSkrive = pageProgram(tempAdresse, antal256bytes, sampleNr, 0xFF);
+          } while(!lykkesDetAtSkrive);
+          tempAdresse += 0x000100;
+        }
+        lykkesDetAtSkrive = false;
+        do{
+          lykkesDetAtSkrive = pageProgram(tempAdresse, tempVal, sampleNr, (arrayLengths[sampleNr] % 0xFF));
+        }while(!lykkesDetAtSkrive);
+        break;
+    }
+  
+    
+  }// for 
+  Serial.println("\t[================]");
+  
+  
+  Serial.println("Programmering done\n");
+  adressenViHusker = START_ADRESS;
+  highSS();
+}
+  
+void readRoutine(){
+  /*##########################################
+   *##########################################
+   *  LÆSER                                 ##
+   *##########################################
+   *##########################################
+   */
+    Serial.print("Reading\n");
+     
+      for(int sampleNr = 0; sampleNr < NUMBER_OF_SAMPLES; sampleNr++){
+        // Udregner antallet af HELE pages (256 byte)
+        tempVal = (arrayLengths[sampleNr] - (arrayLengths[sampleNr] % 0xFF)) / 0xFF;
+        
+        switch(sampleNr){
+          
+          case 0:
+              Serial.println("\t[                ]");
+              readTwoBytes(KICK_ADRESS, tempVal, sampleNr); 
+            break;
+  
+          case 1:
+              Serial.println("\t[====            ]");
+              readTwoBytes(SNARE_ADRESS, tempVal, sampleNr); 
+            break;
+  
+          case 2:
+              Serial.println("\t[========        ]");
+              readTwoBytes(HAT_ADRESS, tempVal, sampleNr); 
+            break;
+  
+          case 3:          
+              Serial.println("\t[============    ]");
+              readTwoBytes(CLAP_ADRESS, tempVal, sampleNr);
+            break;
+        }// Switch
+        
+      }// for
+    Serial.print("\t[================]\t");  
+    delay(100);
+    Serial.println("Done\n");
+    highSS();
+}
+
+void verifyRoutine(){
+  /*##########################################
+   *##########################################
+   *  VERIFICERER                           ##
+   *##########################################
+   *##########################################
+   */
+    Serial.println("Verificerer");
+  
+    // Sammenligner det læste med LUT til der skrevne
+    // Er der forskel får brugeren det at vide
+    for(int i = 0; i < NUMBER_OF_SAMPLES; i++){
+      Serial.print("Sample "); Serial.print(i); Serial.print(":\t");  
+      if(compareData(i)){
+        Serial.println("FAILED");
+      } else {
+        Serial.println("SUCCEEDED");
+      }
+    }
+  
+    // In case, brugeren vil have printet al den læste tata ud igen
+    #if PRINT_THE_READ_DATA == 1
+      printReadData();
+    #endif
+  
+    
+   Serial.println("Verificering done\n");  
+   highSS();
+}
+
+void lockRoutine(){
+  // Hvis den skal låse chippen bagefter den har skrevet til den
+  #if SHOULD_LOCK_AFTER_PROGRAMMING == 1
+    Serial.print("Locking the chip:\t");
+    lockChip();
+    Serial.println("DONE\n");
+  #endif
+}
+
+
+
+
+
 
 
 /*
@@ -835,7 +1221,7 @@ void lockChip(){
     // Serial.print("Stuff: "); Serial.println(B00111100 | storeRDSR, BIN);
     transmitOneByteSPI(0x01);
     
-    transmitOneByteSPI(B00111100 | storeRDSR);
+    transmitOneByteSPI(AREA_TO_LOCK | storeRDSR);
     highSS();
     
     delayMicroseconds(1);
@@ -852,7 +1238,7 @@ void unlockChip(){
     // Serial.print("Stuff: "); Serial.println(B11000011 & storeRDSR, BIN);
     transmitOneByteSPI(0x01);
     
-    transmitOneByteSPI(B11000011 & storeRDSR);
+    transmitOneByteSPI(!(AREA_TO_LOCK) & storeRDSR);
     highSS();
     
     delayMicroseconds(1);
@@ -1465,6 +1851,19 @@ bool compareData(int sampleNr){
   
 }
 
+void printMainMenu(){
+  Serial.println("\t MAIN MENU");
+  Serial.println("Command\tAction");
+  Serial.println("---------------------------");
+  Serial.println(" A\tAuto");
+  Serial.println(" R\tRead");
+  Serial.println(" V\tVerify");
+  Serial.println(" P\tProgram");
+  Serial.println(" D\tErase specific area");
+  Serial.println(" E\tErase whole chip");
+  Serial.println("---------------------------\n\n");
+}
+
 
 /*
 #################################################################################################
@@ -1569,6 +1968,10 @@ void lowClock(){
     digitalWrite(DUE_CLOCK, LOW);
   #endif    
 }
+
+
+
+
 
 
    
