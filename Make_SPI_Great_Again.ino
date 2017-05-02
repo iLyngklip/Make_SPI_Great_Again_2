@@ -130,13 +130,7 @@
      \/     /_/    \_\ |_|  \_\ |_____| /_/    \_\ |____/  |______| |______| |_____/
 #################################################################################################
 */
-
-  
-      
-
-
-
-byte storeReadData[4][MAX_SAMPLE_LENGTH]; // Her gemmer vi de to byte vi læser
+byte storeReadData[NUMBER_OF_SAMPLES][MAX_SAMPLE_LENGTH]; // Her gemmer vi de to byte vi læser
 byte storeRDSR  = 0x00;                // RDSR gemmes her. Omskriv til lokal variabel
 byte RDSCUR     = 0x00;                   // RDSCUR gemmes her. Omskriv til lokal variabel
 
@@ -146,7 +140,7 @@ boolean BP0   = true; //   |
 boolean BP1   = true; //   |-> Protection
 boolean BP2   = true; //   |
 boolean BP3   = true; //   |
-boolean QE    = false;// Quad Enable
+boolean QE    = false;// Quad Enable <- USELESS
 boolean SRWD  = true; // Status Register Write Protect 
 
 boolean CP_SEL  = false;
