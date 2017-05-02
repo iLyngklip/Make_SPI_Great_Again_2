@@ -1,16 +1,11 @@
-const int kickSampleLength  = 13998;
-const int snareSampleLength = 13998;
-const int hatSampleLength   = 13998;
-const int clapSampleLength  = 13998;
-#define SAMPLE_LENGTH 13998
-
-/*
-  kickSample,
-  snareSample,
-  hatSample,
-  clapSample
+/*  Samples er arrangeret som følger:
+     *   kickSample,
+     *   snareSample,
+     *   hatSample,
+     *   clapSample
 */
 #define NUMBER_OF_SAMPLES 4
+#define MAX_SAMPLE_LENGTH 13998
 const int arrayLengths[] = {
   13998,
   13998,
@@ -18,7 +13,7 @@ const int arrayLengths[] = {
   13998
 };
 
-const byte arrayToSaveToFlash[4][13998] = {
+const byte arrayToSaveToFlash[NUMBER_OF_SAMPLES][MAX_SAMPLE_LENGTH] = {
 {
     0xFD, 0xFF, 0xAB, 0xFF, 0x09, 0xFF, 0x77, 0xFF, 0xF7, 0xFF, 0x69, 0xFF, 0x5A, 0xFF, 0xEB, 0xFF,
     0x0C, 0xFF, 0xBC, 0xFF, 0x8D, 0xFF, 0x5E, 0xFF, 0xEE, 0xFF, 0x80, 0x00, 0xB2, 0x00, 0x96, 0x00,
