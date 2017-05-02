@@ -1,11 +1,3 @@
-/* Husk:
- *    adressenViHusker
- *  
- */
-
-
-
- 
 /*
    .-------------.       .    .   *       *   
   /_/_/_/_/_/_/_/ \         *       .   )    .
@@ -38,27 +30,15 @@
  |_____/  |______|    |_|       |_|    |_____| |_| \_|  \_____| |_____/ 
 #################################################################################################
 */
-#define CHOOSE_PROGRAM_MODE     PP
-  /* Valid commands:
-   *  CP: Continously program mode (For large files
-   *  PP: Page program (Max 4k-bit files)
-   *
-   */
 
-// Hvis CHOOSE_PROGRAM_MODE == PP gælder STOP_ADRESS:
-  // Block32-skifte ligger ved 0x010000, 0x020000 osv.
-  // Block-skifte ligger ved 0x100000, 0x200000 osv.
-  // Adressen hvorfra der startes med at skrive 
-  #define START_ADRESS      0x003000
 
-    #define KICK_ADRESS     0x110000
-    #define SNARE_ADRESS    0x120000
-    #define HAT_ADRESS      0x130000
-    #define CLAP_ADRESS     0x140000
+// Block32-skifte ligger ved 0x010000, 0x020000 osv.
+// Block-skifte ligger ved 0x100000, 0x200000 osv.
+#define KICK_ADRESS     0x110000
+#define SNARE_ADRESS    0x120000
+#define HAT_ADRESS      0x130000
+#define CLAP_ADRESS     0x140000
   
-  // Adressen hvortil der skrives. 0x0 for at deaktivere
-  #define STOP_ADRESS       0x000000
-
 
   // 0: Disable 
   // 1: Enable
@@ -135,8 +115,8 @@
   
 
 
-#define CP  1
-#define PP  2   
+
+
 
         
 
@@ -152,11 +132,11 @@
 */
 
   
-      uint32_t adressenViHusker = START_ADRESS;
-const uint32_t startAdressen = START_ADRESS;
+      
 
 
-byte storeReadData[4][13998]; // Her gemmer vi de to byte vi læser
+
+byte storeReadData[4][MAX_SAMPLE_LENGTH]; // Her gemmer vi de to byte vi læser
 byte storeRDSR  = 0x00;                // RDSR gemmes her. Omskriv til lokal variabel
 byte RDSCUR     = 0x00;                   // RDSCUR gemmes her. Omskriv til lokal variabel
 
@@ -267,7 +247,10 @@ void setup() {
   
   #endif
   // Overstående er hvis vi leder efter ting i stedet. Bruges nok ikke mere...
-
+  
+  
+  Serial.flush(); // Flusher lige Serial, så den ikke giver "Wrong input"
+  Serial.flush(); // ... det gør vi lige en ekstra gang
 }
 
 /*
@@ -280,21 +263,7 @@ void setup() {
      \/      \____/  |_____| |_____/        |______|  \____/   \____/  |_|      
 #################################################################################################
 */
-void loop(){
-  /*
-   *  Serial.println("\t MAIN MENU");
-   *  Serial.println("Command\tAction");
-   *  Serial.println("---------------------------");
-   *  Serial.println(" A\tAuto");
-   *  Serial.println(" R\tRead");
-   *  Serial.println(" V\tVerify");
-   *  Serial.println(" P\tProgram");
-   *  Serial.println(" D\tErase specific area");
-   *  Serial.println(" E\tErase whole chip");
-   *  Serial.println("---------------------------\n\n");
-   */
-  
-  
+void loop(){  
   if(Serial.available() == 1){   // check for serial data
     switch(Serial.read()){       // see which command we received
     
@@ -334,16 +303,24 @@ void loop(){
       break;
 
     case 'E':// Erase all
-      
+      headerRoutine();
+      chipErase();
       Serial.println("--- Process done --------------");
       break;
+    case 'L': // Lock chip
+      break;
+
+    case 'U': // Unlock chip
+      break;
+
+      
     default:
-      Serial.println("Wrong input.");
+      // Serial.println("Wrong input.");
       break;
     }// Switch
   } else {    // seems like this is not necessary, but what the hey, leave it in for kicks
-    if(Serial.available() > 1) // if we received too many bytes then clear the buffer
-      Serial.flush();          // Arduino web site unclear on this command's current function, used to clear the buffer
+    if(Serial.available() > 1) // Har vi modtaget for mange bytes, er noget galt
+      Serial.flush();          
    }// else
 
 }// loop
@@ -550,7 +527,7 @@ void programRoutine(){
   
   
   Serial.println("Programmering done\n");
-  adressenViHusker = START_ADRESS;
+  
   highSS();
 }
   
@@ -562,7 +539,7 @@ void readRoutine(){
    *##########################################
    */
     Serial.print("Reading\n");
-     
+      uint32_t tempVal = 0x0;
       for(int sampleNr = 0; sampleNr < NUMBER_OF_SAMPLES; sampleNr++){
         // Udregner antallet af HELE pages (256 byte)
         tempVal = (arrayLengths[sampleNr] - (arrayLengths[sampleNr] % 0xFF)) / 0xFF;
@@ -692,7 +669,7 @@ void readTwoBytes(uint32_t adress, uint8_t numberOfPagesToRead, byte sampleNr){
     // Serial.print("i:\t"); Serial.print(i); Serial.print("\t"); Serial.print(storeReadData[sampleNr][i], HEX); Serial.print("\t"); Serial.println(arrayToSaveToFlash[sampleNr][i],HEX);
     reading++;
   }
-  // Serial.print("reading:\t"); Serial.println(reading);
+  
   
   // Step 5
   highSS();  
@@ -723,8 +700,6 @@ boolean pageProgram(uint32_t adress, byte numberOfPagesToWrite, int sampleSelect
     Serial.print("adress:\t"); Serial.print(adress, HEX); Serial.print("\tsampleSelection:\t"); Serial.println(sampleSelection);
   #endif
     //    De adresse-variabler vi har
-    // uint32_t adressenViHusker = START_ADRESS;
-      // Serial.print("adress:\t"); Serial.print(adress); Serial.print("\tnumberPage:\t"); Serial.println(numberOfPagesToWrite);
 
     // Giver write-enable og tjekker den er klar
     do{                     
@@ -788,134 +763,6 @@ boolean pageProgram(uint32_t adress, byte numberOfPagesToWrite, int sampleSelect
      */
 }
 
-void writeStuff(){
-  /* DENNE FUNKTION BRUGES IKKE MERE
-   *  
-   *  SÅDAN SER WRITE-CYCLEN UD!
-   * ----------------------------
-   * WREN                                         0x06
-   * RDSR                                         0x05
-   *  ↳ WREN=1?                                    Bit 1 fra RDSR
-   * Contenious program mode                      0xAD 
-   *  ↳ Adressen                                   ADD(24)
-   *  ↳ Write data                                 DATA(16)
-   * RDSR command                                 0x05
-   *  ↳ WIP = 0?                                   Bit 0 fra RDSR      
-   * RDSCUR command - Tjek om det lykkedes        0x2B
-   *  ↳ P_FAIL / E_FAIL = 1?                       FORFRA! ALT ER DONE! :o
-   * WREN = 0   0x04
-   *
-   * ------------------------------------------------------------------------------
-   * | TEKST-version:                                                             |
-   * ------------------------------------------------------------------------------
-   * || Write-Enable sendes (step 1) hvorefter vi afventer chippen er klar        |
-   * || til at modtage data (step 2). Dette tjekkes med bit 1 fra                 |
-   * || statusregistret (RDSR). Nu sættes chippen i Continously-Program (CP) mode |
-   * || (step 3). Hvordan denne fungerer kan læses i funktionen                   |
-   * || continouslyProgram(). Når continouslyProgram() er færdig med at skrive    |
-   * || data til flash'en tjekkes bit 0 fra RDSR (step 4) Er denne = 0, er        |
-   * || chippen færdig med at gemme og derfor klar til nye ting.                  |
-   * || For at tjekke om dataen blev skrevet til flashen tjekkes P_FAIL & E_FAIL  |
-   * || som er bit 5 & 6 fra RDSR. Er disse HIGH mislykkedes hele operationen og  |
-   * || hele writeStuff() skal køres forfra.                                      |
-   * ------------------------------------------------------------------------------
-   */
-   
-    
-
-    // Vent på Write-Enable-Latch bliver 1
-    do{                     
-      writeEnable();        // Step 1  
-      writeStatusRegister();
-      readStatusRegister(); // Step 2
-    // Serial.print("RDSR: "); Serial.println(storeRDSR, BIN);
-    }while(!WEL);           // Step 2
-
-      // setGBULK();
-    RDBLOCK();
-
-
-
-    
-    // Fyr data afsted
-    // continouslyProgram();   // Step 3 <-- EKSISTERER IKKE MERE!
-
-
-    // Vent på Write-In-Progress bitten bliver 0 igen
-    do{                     // Step 4
-      readStatusRegister(); // Step 4
-      if(WIP){
-        Serial.println("WIP 1");
-      }
-    }while(WIP);            // Step 4
-
-    readRDSCUR();           // Step 5
-    
-    // Her tjekker vi om det faktisk lykkedes
-    if(bitRead(RDSCUR, 5) == 1 || bitRead(RDSCUR, 6) == 1){
-      // The programming failed! 
-      throwErrorMessage();
-    } else {
-      // Ting virkede!
-      // Denne else er overflødig
-      Serial.println("Ting virkede!");
-    }
-    // setGBLK();
-    writeDisable();
-    highSS(); // Vi er done nu
-}
-/*
-void contProgram(uint32_t adress){
-  do{
-    waitUntilWEL();
-    waitUntilWorkIsDone();
-    lowSS();
-    transmitOneByteSPI(0xAD); // CP command
-    delayMicroseconds(1);
-    
-    
-    
-    sendAdress(adressenViHusker);
-    
-    transmitOneByteSPI(arrayToSaveToFlash[adressenViHusker]);
-    transmitOneByteSPI(arrayToSaveToFlash[adressenViHusker + 1]);
-    cycleSS();
-    readRDSCUR();
-    // Serial.print("RDSCUR:\t"); Serial.println(RDSCUR, BIN);
-  }while(!CP_SEL);
-    
-    adressenViHusker += 2;
-    if(sizeof(arrayToSaveToFlash) % 2 > 0){
-      // Det er et ulige antal, så der skal sendes en 0xFF byte til sidst
-      
-    } else {
-      // Det er et lige antal, så ingen dummy-byte
-      int i = 2;
-      while(i < sizeof(arrayToSaveToFlash) && CP_SEL){
-      
-        // Loopet der skal sende bytes afsted
-        cycleSS();
-        sendContinouslyProgramCommand();   
-        
-        transmitOneByteSPI(arrayToSaveToFlash[i]);
-        transmitOneByteSPI(arrayToSaveToFlash[i + 1]);
-        
-        
-        // Skal slutte med:
-        // Serial.print("i:\t"); Serial.println(i);
-        // Serial.print("adressenViHusker1:\t"); Serial.println(adressenViHusker, HEX);
-        // Serial.print("Forskel:\t"); Serial.println(sizeof(arrayToSaveToFlash) > (START_ADRESS - adressenViHusker));
-        i += 2;
-      }
-    }
-
-    writeDisable();
-    readStatusRegister();
-    readRDSCUR();
-    // Serial.println("Jeg er sej");
-}
-*/
-
 void lockChip(){
   do{
     readStatusRegister();
@@ -931,7 +778,6 @@ void lockChip(){
   } while(!isBlocksLocked());
   writeDisable();
 }
-
 
 void unlockChip(){
   do{
@@ -1012,13 +858,6 @@ void writeDisable(){
 } // writeDisable
 
 
-
-void sendContinouslyProgramCommand(){
-  transmitOneByteSPI(0xAD); // CP command
-  
-}
-
-
 /*
 #################################################################################################
   _____    ______              _____          ______   _    _   _   _    _____     
@@ -1045,11 +884,6 @@ void sendReadInstruction(){
   transmitOneByteSPI(0x03); // Read command
 }
 
-void readData(char lenghtInBytes){
-  /*  Denne funktion skal læse lengthInBytes-antal bytes
-   *   fra flash'en
-   */
-}
 
 
 /*
@@ -1073,17 +907,15 @@ void sendAdress(uint32_t adress){
   transmitOneByteSPI(adress&0x0000FF);        // ----|     á 8 bit pr. gang
 }
 
-
 byte readOneByteSPI(){
   /*
    * Denne funktion læser én byte fra SPI
    */
    
   byte tempInputData = 0x00;
-  // Læs data
-  lowMosi();
-  // cycleClock();    DA DER LIGE ER BLEVET SENDT EN KOMMANDO ER DER
-  //                  IKKE BEHOV FOR AT CYCLE CLOCKEN
+  
+  highMosi();
+  
   #if defined(ARDUINO_AVR_UNO)
     
     for(int k = 7; k >= 0; k--){
@@ -1107,6 +939,7 @@ byte readOneByteSPI(){
     
   #endif
   
+  lowMosi();
   return tempInputData;
 }
 
@@ -1126,7 +959,6 @@ void transmitOneByteSPI(byte data){
   }// for
  
 }
-
 
 void readRDSCUR(){
   /* 
@@ -1178,42 +1010,11 @@ void readStatusRegister(){
   highSS();
 }
 
-void RDBLOCK(){
-  /*  Send en RDBLOCK kommando og gem svaret
-   *   Denne kan kun bruges hvis WPSEL = 1
-   *    1 = Låst
-   *    0 = ulåst
-   *    
-   *    Funktionen bruges ikke
-   *  
-   *  → CS# goes low 
-   *  → send RDBLOCK (3Ch) instruction 
-   *  → send 3 address bytes to assign one block on SI pin  (24 bit)
-   *  → read block's protection lock status bit on SO pin   ( 1 bit)
-   *  → CS# goes high. 
-   */
-  lowSS();
-  transmitOneByteSPI(0x3C);
-  sendAdress(adressenViHusker);
-  byte tempRDBLOCK = 0x00;
-  tempRDBLOCK = readOneByteSPI();
-  tempRDBLOCK = tempRDBLOCK & 0xFF;
-  
-  if(tempRDBLOCK == 0x01){
-    // Der er låst!
-    Serial.print("L--RDBLOCK:\t"); Serial.println(tempRDBLOCK, BIN);
-  } else {
-    // Der er IKKE låst!
-    Serial.print("UL-RDBLOCK:\t"); Serial.println(tempRDBLOCK, BIN);
-  }
-  highSS();
-}
-
 void blockErase(uint32_t adress){
-  /*
+  /*  
    * Sletter en hel block (64k-byte)
    *  Er blokken låst (BP0-BP3 = 1, eller WPSEL = 1) sker der ingen ting
-   *  
+   *    Bruges ikke mere.
    */
   #if DEBUG_BLOCK_ERASE == 1
    Serial.print("blockErase: adress:\t"); Serial.println(adress, HEX);
@@ -1265,6 +1066,7 @@ void waitUntilWorkIsDone(){
   #if DEBUG_WHILE_LOOPS == 1
     Serial.println("waitUntilWorkIsDone\n");
   #endif
+  
   do{
     readStatusRegister();
     highSS(); // High SS afterwards
@@ -1282,118 +1084,6 @@ void waitUntilWEL(){
     readStatusRegister();
   }while(!WEL);
 }
-
-void setGBULK(){
-  /*  
-   *  Gang Block Unlock
-   *    Låser en hel blok op
-   *    
-   *   Flow: 
-   * → CS# goes low 
-   * → send GBULK (0x98) instruction 
-   * → CS# goes high <- DEN SKAL VÆRE SAMMEN MED DEN SIDSTE DATA-BIT!
-   */
-#if defined(ARDUINO_AVR_UNO)
-  lowSS();
-
-  highMosi();//   |
-  cycleClock();// |-> Bit 7
-
-  lowMosi();//    |
-  cycleClock();// |-> Bit 6
-
-  lowMosi();//    |
-  cycleClock();// |-> Bit 5
-
-  highMosi();//   |
-  cycleClock();// |-> Bit 4
-  
-  highMosi();//   |
-  cycleClock();// |-> Bit 3
-
-  lowMosi();//    |
-  cycleClock();// |-> Bit 2
-
-  lowMosi();//    |
-  cycleClock();// |-> Bit 1
-
-  lowMosi();//    |-> Bit 0
-  PORTB |=    B00100100;// Her settes clocken OG SS samtidig
-  PORTB &=    B11011111;// Low clock
-  
-  // Ikke brug for highSS() bagefter
-
-
-  /* Bruges til skabelon til Bit 0
-    PORTB &=    B11110111;   // Set low MOSI
-    PORTB |=    B00100000;  // Set it to high // CLOCK
-    PORTB |=    B00000100;  // Set it to high // SS
-  */
-  #elif defined(ARDUINO_SAM_DUE)
-    // GØR TING FOR DUO-EN
-    lowSS();
-    transmitOneByteSPI(0x98);
-    highSS();
-      
-  #endif
-}
-
-void setGBLK(){
-  /*  Gang Block Lock
-   *   Låser en hel blok
-   *   
-   *   Flow: 
-   * → CS# goes low 
-   * → send GBLK (0x7E) instruction 
-   * → CS# goes high <- DEN SKAL VÆRE SAMMEN MED DEN SIDSTE DATA-BIT!
-   */
-#if defined(ARDUINO_AVR_UNO)
-  lowSS();
-
-  lowMosi();//    |
-  cycleClock();// |-> Bit 7
-
-  highMosi();//   |
-  cycleClock();// |-> Bit 6
-
-  highMosi();//   |
-  cycleClock();// |-> Bit 5
-
-  highMosi();//   |
-  cycleClock();// |-> Bit 4
-  
-  highMosi();//   |
-  cycleClock();// |-> Bit 3
-
-  highMosi();//   |
-  cycleClock();// |-> Bit 2
-
-  highMosi();//   |
-  cycleClock();// |-> Bit 1
-
-  lowMosi();//    |-> Bit 0
-  PORTB |=    B00100100;// Her settes clocken OG SS samtidig
-  PORTB &=    B11011111;// Low clock
-  
-  // No need for highSS();
-
-
-  /* Bruges til skabelon til Bit 0
-    PORTB &=    B11110111;   // Set low MOSI
-    PORTB |=    B00100000;  // Set it to high // CLOCK
-    PORTB |=    B00000100;  // Set it to high // SS
-  */
-  #elif defined(ARDUINO_SAM_DUE)
-    // GØR TING FOR DUO-EN
-    lowSS();
-    transmitOneByteSPI(0x7E);
-    highSS();
-  #endif
-  
-  
-}
-
-
 
 boolean isBlocksLocked(){
   /*
@@ -1484,6 +1174,7 @@ void chipErase(){
   highSS();
   delay(10000);
   waitUntilWorkIsDone();
+  highSS();
 }
 /*
 #################################################################################################
@@ -1555,16 +1246,21 @@ bool compareData(int sampleNr){
 }
 
 void printMainMenu(){
-  Serial.println("\t MAIN MENU");
-  Serial.println("Command\tAction");
-  Serial.println("---------------------------");
-  Serial.println(" A\tAuto");
-  Serial.println(" R\tRead");
-  Serial.println(" V\tVerify");
-  Serial.println(" P\tProgram");
-  Serial.println(" D\tErase specific area");
-  Serial.println(" E\tErase whole chip");
-  Serial.println("---------------------------\n\n");
+  Serial.print("\n\n\n\n\n\n");
+  Serial.println("---------------------------------");
+  Serial.println("|\t MAIN MENU\t\t|");
+  Serial.println("---------------------------------");
+  Serial.println("|Command\tAction\t\t|");
+  Serial.println("---------------------------------");
+  Serial.println("| A\tAuto\t\t\t|");
+  Serial.println("| R\tRead\t\t\t|");
+  Serial.println("| V\tVerify\t\t\t|");
+  Serial.println("| P\tProgram\t\t\t|");
+  Serial.println("| U\tUnlock chip\t\t|");
+  Serial.println("| L\tLock chip\t\t|");
+  Serial.println("| D\tErase specific area\t|");
+  Serial.println("| E\tErase whole chip\t|");
+  Serial.println("---------------------------------\n\n");
 }
 
 
@@ -1595,14 +1291,6 @@ void pulseBreakPin(){
     digitalWrite(DUE_BP, LOW);
   #endif
 }
-
-void emptyBytes(){
-  lowMosi();
-  for(int i = 8; i > 0; i--){
-    cycleClock();
-  }
-}
-
 
 void cycleSS(){
   highSS();
@@ -1671,10 +1359,3 @@ void lowClock(){
     digitalWrite(DUE_CLOCK, LOW);
   #endif    
 }
-
-
-
-
-
-
-   
