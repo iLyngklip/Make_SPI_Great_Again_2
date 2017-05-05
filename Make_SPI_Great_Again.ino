@@ -112,9 +112,12 @@
 #define DUE_MOSI    11
 #define DUE_SS      10
 #define DUE_BP       9
+
   
-
-
+// Sikrer lige det rigtige board er valgt
+#if !defined(ARDUINO_SAM_DUE)
+  #error Forkert board, brug Arduino Due!
+#endif
 
 
 
@@ -259,7 +262,12 @@ void setup() {
 */
 void loop(){  
   if(Serial.available() == 1){   // check for serial data
-    switch(Serial.read()){       // see which command we received
+    char tempCharForSwitch = Serial.read();
+    if(tempCharForSwitch > 90){
+      Serial.print("tempCharForSwitch:\t"); Serial.println(tempCharForSwitch);
+      tempCharForSwitch -= 32;
+    } 
+    switch(tempCharForSwitch){       // see which command we received
     
     case 'A': // AUTO
       eraseAllRoutine();
@@ -271,35 +279,41 @@ void loop(){
       lockRoutine();
       
       Serial.println("--- Process done --------------");
+      printMainMenu();
       break;  
 
     case 'R': // READ
       headerRoutine();
       readRoutine();
       Serial.println("--- Process done --------------");
+      printMainMenu();
       break;  
 
     case 'V': // Verify
       headerRoutine();
       verifyRoutine();
       Serial.println("--- Process done --------------");
+      printMainMenu();
       break;  
     
     case 'P':// Program
       headerRoutine();
       programRoutine();
       Serial.println("--- Process done --------------");
+      printMainMenu();
       break;
 
     case 'D':// Specific erase
       
       Serial.println("--- Process done --------------");
+      printMainMenu();
       break;
 
     case 'E':// Erase all
       headerRoutine();
       chipErase();
       Serial.println("--- Process done --------------");
+      printMainMenu();
       break;
     case 'L': // Lock chip
       break;
@@ -312,6 +326,7 @@ void loop(){
       // Serial.println("Wrong input.");
       break;
     }// Switch
+    
   } else {    // seems like this is not necessary, but what the hey, leave it in for kicks
     if(Serial.available() > 1) // Har vi modtaget for mange bytes, er noget galt
       Serial.flush();          
@@ -1161,14 +1176,18 @@ void chipErase(){
   #if DEBUG_WHILE_LOOPS == 1
     Serial.println("Chip Erase\n");
   #endif
-  highSS();
-  waitUntilWEL();
-  lowSS();
-  transmitOneByteSPI(0xC7);
-  highSS();
-  delay(10000);
-  waitUntilWorkIsDone();
-  highSS();
+  highSS();       // Sikrer SS er høj
+  waitUntilWEL(); // Venter på Write Enable
+  lowSS();        // Sætter SS low før kommando
+  transmitOneByteSPI(0xC7); // Slet alt kommando
+  highSS();       // Høj SS igen, for vi er done med første del
+  
+  delay(20000);   // Giver chippen tid til at slette
+                  // Typ: 50s Max: 80s
+  
+  waitUntilWorkIsDone();  // Da delayet over er for kort, venter vi på 
+                          // chippen er klar igen, så vi tjekker WIP
+  highSS();       // Høj SS da vi er helt done
 }
 /*
 #################################################################################################
@@ -1240,6 +1259,7 @@ bool compareData(int sampleNr){
 }
 
 void printMainMenu(){
+  delay(3000);
   Serial.print("\n\n\n\n\n\n");
   Serial.println("---------------------------------");
   Serial.println("|\t MAIN MENU\t\t|");
